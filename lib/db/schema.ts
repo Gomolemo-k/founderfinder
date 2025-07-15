@@ -1,25 +1,34 @@
 --- a/lib/db/schema.ts
 +++ b/lib/db/schema.ts
-@@ -1,5 +1,5 @@
-// lib/db/schema.ts
--import { pgTable, serial, text, timestamp, jsonb } from 'drizzle-orm/pg-core';
-+import { pgTable, serial, text, timestamp, jsonb, boolean, integer } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+@@ -0,0 +1,48 @@
+import { integer, pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export const users = pgTable('users', {
-@@ -11,6 +11,13 @@
-  stripeCustomerId: text('stripe_customer_id'),
-  stripeSubscriptionId: text('stripe_subscription_id'),
-  stripePriceId: text('stripe_price_id'),
-+});
-+
-+export const profiles = pgTable('profiles', {
-+  id: serial('id').primaryKey(),
-+  userId: integer('user_id').notNull().unique(),
-+  firstName: text('first_name'),
-+  lastName: text('last_name'),
-  stripeSubscriptionStatus: text('stripe_subscription_status'),
+ id: serial('id').primaryKey(),
+ fullName: text('full_name'),
+ email: text('email').notNull().unique(),
+ image: text('image'),
+ createdAt: timestamp('created_at').defaultNow(),
+ updatedAt: timestamp('updated_at').defaultNow(),
 });
 
-export const profiles = pgTable('profiles', {
-@@ -108,7 +115,7 @@
+export const skills = pgTable('skills', {
+ id: serial('id').primaryKey(),
+ name: text('name').notNull().unique(),
+ createdAt: timestamp('created_at').defaultNow(),
+ updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const userSkills = pgTable('user_skills', {
+ userId: integer('user_id').notNull().references(() => users.id),
+ skillId: integer('skill_id').notNull().references(() => skills.id),
+});
+
+export const startupIdeas = pgTable('startup_ideas', {
+ id: serial('id').primaryKey(),
+ userId: integer('user_id').notNull().references(() => users.id),
+ title: text('title').notNull(),
+ description: text('description'),
+ createdAt: timestamp('created_at').defaultNow(),
+ updatedAt: timestamp('updated_at').defaultNow(),
+});
