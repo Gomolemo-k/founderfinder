@@ -1,0 +1,9 @@
+name = "founderfinder"
+compatibility_date = "2024-01-01"
+
+[build]
+command = "npm run deploy:prepare"
+
+[site]
+bucket = ".vercel/output/static"
+entry-point = ".vercel/output/functions"
