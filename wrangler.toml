@@ -3,8 +3,8 @@ type = "javascript"
 compatibility_date = "2024-01-01"
 
 [build]
-command = "npx @cloudflare/next-on-pages build"
+command = "npm run build"  
 
 [build.upload]
 format = "service-worker"
-dir = ".vercel/output/functions/_worker"
+dir = "dist"  # or wherever your worker script is output, update accordingly

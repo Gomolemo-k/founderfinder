@@ -24,9 +24,6 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Prepare Worker output for Cloudflare
-        run: npx @cloudflare/next-on-pages
-
       - name: Install Wrangler CLI
         run: npm install -g wrangler
 
