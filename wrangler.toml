@@ -1,8 +1,0 @@
-name = "founderfinder"
-type = "javascript"
-account_id = "cffdf44b9e5c6d35ebeac1d15fe85958"
-main = ".vercel/output/functions/_worker/worker.mjs"
-compatibility_date = "2024-01-01"
-
-[build]
-command = "npm run build"
