@@ -2,16 +2,7 @@ name = "founderfinder"
 type = "javascript"
 account_id = "cffdf44b9e5c6d35ebeac1d15fe85958"
 compatibility_date = "2025-07-21"
-
-[build]
-command = "npm run build"
+main = ".open-next/_worker.js"
 
 [site]
-bucket = "./.vercel/output/static"
-entry-point = "./.vercel/output/functions/_worker.js"
-
-[upload]
-format = "modules"
-main = "./.vercel/output/functions/_worker.js"
-
-
+bucket = ".open-next/assets"
