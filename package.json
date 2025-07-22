@@ -1,17 +1,17 @@
 {
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build && next-on-pages",
-    "start": "next start",
-    "preview": "wrangler pages dev ./out --compatibility-date=2025-07-21",
-    "deploy": "wrangler pages deploy ./out --project-name=founderfinder",
-    "db:setup": "npx tsx lib/db/setup.ts",
-    "db:seed": "npx tsx lib/db/seed.ts",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
-  },
+ "scripts": {
+  "dev": "next dev",
+  "build": "next build && next-on-pages",
+  "start": "next start",
+  "preview": "wrangler dev .vercel/output/functions/_worker.js --compatibility-date=2025-07-21",
+  "deploy": "wrangler deploy --config wrangler.toml",
+  "db:setup": "npx tsx lib/db/setup.ts",
+  "db:seed": "npx tsx lib/db/seed.ts",
+  "db:generate": "drizzle-kit generate",
+  "db:migrate": "drizzle-kit migrate",
+  "db:studio": "drizzle-kit studio"
+},
   "dependencies": {
     "@opennextjs/cloudflare": "1.5.1",
     "@tailwindcss/postcss": "4.1.7",

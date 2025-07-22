@@ -1,5 +1,17 @@
 name = "founderfinder"
+type = "javascript"
 account_id = "cffdf44b9e5c6d35ebeac1d15fe85958"
 compatibility_date = "2025-07-21"
 
-pages_build_output_dir = "./.vercel/output"
+[build]
+command = "npm run build"
+
+[site]
+bucket = "./.vercel/output/static"
+entry-point = "./.vercel/output/functions/_worker.js"
+
+[upload]
+format = "modules"
+main = "./.vercel/output/functions/_worker.js"
+
+
