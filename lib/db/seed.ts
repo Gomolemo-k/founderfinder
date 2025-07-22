@@ -1,3 +1,6 @@
+export const runtime = 'nodejs';
+
+
 import { stripe } from '../payments/stripe';
 import { db } from './drizzle';
 import { users, teams, teamMembers } from './schema';
