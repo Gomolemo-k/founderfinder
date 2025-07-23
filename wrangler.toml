@@ -6,3 +6,9 @@ main = ".open-next/_worker.js"
 
 [site]
 bucket = ".open-next/assets"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "founderfinder"
+database_id = "f224c904-145c-4b93-b3dc-aabbbba68149"
+
