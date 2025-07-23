@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
-  optimizeFonts: false,
+  experimental: {
+    nodeMiddleware: true,
+  },
 };
 
 module.exports = nextConfig;
