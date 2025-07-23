@@ -4,6 +4,7 @@
     "dev": "next dev",
     "build": "next build && open-next build",
     "start": "next start",
+    "postinstall": "next telemetry disable",
     "preview": "wrangler dev .open-next",
     "deploy": "wrangler deploy .open-next",
     "db:setup": "npx tsx lib/db/setup.ts",
