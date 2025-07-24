@@ -1,6 +1,7 @@
 export const runtime = 'nodejs';
 
 import { eq } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { getDb } from '@/lib/db/drizzle';
 import { users, teams, teamMembers } from '@/lib/db/schema';
 import { setSession } from '@/lib/auth/session';
@@ -9,7 +10,6 @@ import { stripe } from '@/lib/payments/stripe';
 import Stripe from 'stripe';
 
 export async function GET(request: NextRequest) {
-  // ❗ Assumes D1 is available via process.env.DB in Node.js runtime
   const db = getDb(process.env.DB as unknown as D1Database);
 
   const searchParams = request.nextUrl.searchParams;
@@ -69,16 +69,21 @@ export async function GET(request: NextRequest) {
       throw new Error('User not found in database.');
     }
 
-    const userTeam = await db
-      .select({
-        teamId: teamMembers.teamId as unknown as number,
-      })
-      .from(teamMembers)
-      .where(eq(teamMembers.userId, user[0].id))
-      .limit(1);
+   const userTeam = await db
+  .select({
+    teamId: sql`team_members.team_id`, 
+  })
+  .from(teamMembers)
+  .where(eq(teamMembers.userId, user[0].id))
+  .limit(1);
 
     if (userTeam.length === 0) {
       throw new Error('User is not associated with any team.');
+    }
+
+    const teamId = userTeam[0].teamId;
+    if (typeof teamId !== 'number') {
+      throw new Error('Invalid team ID type.');
     }
 
     await db
@@ -91,7 +96,7 @@ export async function GET(request: NextRequest) {
         subscriptionStatus: subscription.status,
         updatedAt: new Date(),
       })
-      .where(eq(teams.id, Number(userTeam[0].teamId)));
+      .where(eq(teams.id, teamId)); // ✅ Use direct teamId safely
 
     await setSession(user[0]);
     return NextResponse.redirect(new URL('/dashboard', request.url));
