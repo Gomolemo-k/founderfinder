@@ -280,7 +280,7 @@ export const updatePassword = validatedActionWithUser(
         .update(users)
         .set({ passwordHash: newPasswordHash })
         .where(eq(users.id, user.id)),
-      logActivity(userWithTeam?.teamId, user.id, ActivityType.UPDATE_PASSWORD)
+      logActivity(userWithTeam?.teamId as number | null | undefined, user.id, ActivityType.UPDATE_PASSWORD)
     ]);
 
     return {
@@ -306,10 +306,10 @@ export const deleteAccount = validatedActionWithUser(
       };
     }
 
-    const userWithTeam = await getUserWithTeam(user.id);
+    const userWithTeam = await getUserWithTeam(db, user.id);
 
     await logActivity(
-      userWithTeam?.teamId,
+      userWithTeam?.teamId as number | null | undefined,
       user.id,
       ActivityType.DELETE_ACCOUNT
     );
@@ -328,7 +328,7 @@ export const deleteAccount = validatedActionWithUser(
         .where(
           and(
             eq(teamMembers.userId, user.id),
-            eq(teamMembers.teamId, userWithTeam.teamId)
+            eq(teamMembers.teamId, userWithTeam.teamId as number)
           )
         );
     }
@@ -347,11 +347,11 @@ export const updateAccount = validatedActionWithUser(
   updateAccountSchema,
   async (data, _, user) => {
     const { name, email } = data;
-    const userWithTeam = await getUserWithTeam(user.id);
+    const userWithTeam = await getUserWithTeam(db, user.id);
 
     await Promise.all([
       db.update(users).set({ name, email }).where(eq(users.id, user.id)),
-      logActivity(userWithTeam?.teamId, user.id, ActivityType.UPDATE_ACCOUNT)
+      logActivity(userWithTeam?.teamId as number | null | undefined, user.id, ActivityType.UPDATE_ACCOUNT)
     ]);
 
     return { name, success: 'Account updated successfully.' };
@@ -366,26 +366,37 @@ export const removeTeamMember = validatedActionWithUser(
   removeTeamMemberSchema,
   async (data, _, user) => {
     const { memberId } = data;
-    const userWithTeam = await getUserWithTeam(user.id);
+    const userWithTeam = await getUserWithTeam(db, user.id);
 
-    if (!userWithTeam?.teamId) {
-      return { error: 'User is not part of a team' };
-    }
+if (!userWithTeam?.teamId) {
+  return { error: 'User is not part of a team' };
+}
 
-    await db
-      .delete(teamMembers)
-      .where(
-        and(
-          eq(teamMembers.id, memberId),
-          eq(teamMembers.teamId, userWithTeam.teamId)
-        )
-      );
+const teamId = userWithTeam.teamId as number;
 
-    await logActivity(
-      userWithTeam.teamId,
-      user.id,
-      ActivityType.REMOVE_TEAM_MEMBER
-    );
+await db
+  .delete(teamMembers)
+  .where(
+    and(
+      eq(teamMembers.id, memberId),
+      eq(teamMembers.teamId, teamId)
+    )
+  );
+
+if (!userWithTeam?.teamId) {
+  return { error: 'User is not part of a team' };
+}
+
+const teamId = userWithTeam.teamId as number;\
+
+await db
+  .delete(teamMembers)
+  .where(
+    and(
+      eq(teamMembers.id, memberId),
+      eq(teamMembers.teamId, teamId)
+    )
+  );
 
     return { success: 'Team member removed successfully' };
   }
@@ -400,7 +411,7 @@ export const inviteTeamMember = validatedActionWithUser(
   inviteTeamMemberSchema,
   async (data, _, user) => {
     const { email, role } = data;
-    const userWithTeam = await getUserWithTeam(user.id);
+    const userWithTeam = await getUserWithTeam(db, user.id);
 
     if (!userWithTeam?.teamId) {
       return { error: 'User is not part of a team' };
@@ -411,7 +422,7 @@ export const inviteTeamMember = validatedActionWithUser(
       .from(users)
       .leftJoin(teamMembers, eq(users.id, teamMembers.userId))
       .where(
-        and(eq(users.email, email), eq(teamMembers.teamId, userWithTeam.teamId))
+        and(eq(users.email, email), eq(teamMembers.teamId, userWithTeam.teamId as number))
       )
       .limit(1);
 
@@ -425,7 +436,7 @@ export const inviteTeamMember = validatedActionWithUser(
       .where(
         and(
           eq(invitations.email, email),
-          eq(invitations.teamId, userWithTeam.teamId),
+         eq(invitations.teamId, userWithTeam.teamId as number),
           eq(invitations.status, 'pending')
         )
       )
@@ -443,11 +454,11 @@ export const inviteTeamMember = validatedActionWithUser(
       status: 'pending'
     });
 
-    await logActivity(
-      userWithTeam.teamId,
-      user.id,
-      ActivityType.INVITE_TEAM_MEMBER
-    );
+await logActivity(
+  userWithTeam.teamId as number,
+  user.id,
+  ActivityType.INVITE_TEAM_MEMBER
+);
 
     return { success: 'Invitation sent successfully' };
   }
