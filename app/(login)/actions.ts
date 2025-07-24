@@ -225,7 +225,7 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
 export async function signOut() {
   const user = (await getUser(db, cookies())) as User;
   const userWithTeam = await getUserWithTeam(db, user.id);
-  await logActivity(userWithTeam?.teamId as number | null | undefined, user.id, ActivityType.SIGN_OUT);
+  await logActivity(userWithTeam?.team?.id as number | null | undefined, user.id, ActivityType.SIGN_OUT);
   (await cookies()).delete('session');
 }
 
@@ -280,7 +280,7 @@ export const updatePassword = validatedActionWithUser(
         .update(users)
         .set({ passwordHash: newPasswordHash })
         .where(eq(users.id, user.id)),
-      logActivity(userWithTeam?.teamId as number | null | undefined, user.id, ActivityType.UPDATE_PASSWORD)
+      logActivity(userWithTeam?.team?.id as number | null | undefined, user.id, ActivityType.UPDATE_PASSWORD)
     ]);
 
     return {
@@ -309,7 +309,7 @@ export const deleteAccount = validatedActionWithUser(
     const userWithTeam = await getUserWithTeam(db, user.id);
 
     await logActivity(
-      userWithTeam?.teamId as number | null | undefined,
+      userWithTeam?.team?.id as number | null | undefined,
       user.id,
       ActivityType.DELETE_ACCOUNT
     );
@@ -322,13 +322,13 @@ export const deleteAccount = validatedActionWithUser(
       })
       .where(eq(users.id, user.id));
 
-    if (userWithTeam?.teamId) {
+    if (userWithTeam?.team?.id) {
       await db
         .delete(teamMembers)
         .where(
           and(
             eq(teamMembers.userId, user.id),
-            eq(teamMembers.teamId, userWithTeam.teamId as number)
+            eq(teamMembers.teamId, userWithTeam.team?.id as number)
           )
         );
     }
@@ -351,7 +351,7 @@ export const updateAccount = validatedActionWithUser(
 
     await Promise.all([
       db.update(users).set({ name, email }).where(eq(users.id, user.id)),
-      logActivity(userWithTeam?.teamId as number | null | undefined, user.id, ActivityType.UPDATE_ACCOUNT)
+      logActivity(userWithTeam?.team?.id as number | null | undefined, user.id, ActivityType.UPDATE_ACCOUNT)
     ]);
 
     return { name, success: 'Account updated successfully.' };
@@ -368,11 +368,11 @@ export const removeTeamMember = validatedActionWithUser(
     const { memberId } = data;
     const userWithTeam = await getUserWithTeam(db, user.id);
 
-if (!userWithTeam?.teamId) {
+if (!userWithTeam?.team?.id) {
   return { error: 'User is not part of a team' };
 }
 
-const teamId = userWithTeam.teamId as number;
+const teamId = userWithTeam.team?.id as number;
 
 await db
   .delete(teamMembers)
@@ -410,7 +410,7 @@ export const inviteTeamMember = validatedActionWithUser(
     const { email, role } = data;
     const userWithTeam = await getUserWithTeam(db, user.id);
 
-    if (!userWithTeam?.teamId) {
+    if (!userWithTeam?.team?.id) {
       return { error: 'User is not part of a team' };
     }
 
@@ -419,7 +419,7 @@ export const inviteTeamMember = validatedActionWithUser(
       .from(users)
       .leftJoin(teamMembers, eq(users.id, teamMembers.userId))
       .where(
-        and(eq(users.email, email), eq(teamMembers.teamId, userWithTeam.teamId as number))
+        and(eq(users.email, email), eq(teamMembers.teamId, userWithTeam.team?.id as number))
       )
       .limit(1);
 
@@ -433,7 +433,7 @@ export const inviteTeamMember = validatedActionWithUser(
       .where(
         and(
           eq(invitations.email, email),
-         eq(invitations.teamId, userWithTeam.teamId as number),
+         eq(invitations.teamId, userWithTeam.team?.id as number),
           eq(invitations.status, 'pending')
         )
       )
@@ -444,7 +444,7 @@ export const inviteTeamMember = validatedActionWithUser(
     }
 
  await db.insert(invitations).values({
-  teamId: userWithTeam.teamId as number,
+  teamId: userWithTeam.team?.id as number,
   email,
   role,
   invitedBy: user.id,
@@ -453,7 +453,7 @@ export const inviteTeamMember = validatedActionWithUser(
 
 
 await logActivity(
-  userWithTeam.teamId as number,
+  userWithTeam.team?.id as number,
   user.id,
   ActivityType.INVITE_TEAM_MEMBER
 );
