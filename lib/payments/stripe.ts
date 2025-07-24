@@ -7,6 +7,9 @@ import {
   updateTeamSubscription
 } from '@/lib/db/queries';
 
+import { getDb } from '@/lib/db/drizzle';
+import { cookies } from 'next/headers';
+
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-04-30.basil'
 });
@@ -18,7 +21,10 @@ export async function createCheckoutSession({
   team: Team | null;
   priceId: string;
 }) {
-  const user = await getUser();
+  const db = getDb(process.env.DB as any);
+  const cookieStore = cookies();
+
+  const user = await getUser(db, cookieStore);
 
   if (!team || !user) {
     redirect(`/sign-up?redirect=checkout&priceId=${priceId}`);
