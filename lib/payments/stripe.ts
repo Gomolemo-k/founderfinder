@@ -123,11 +123,12 @@ export async function createCustomerPortalSession(team: Team) {
 export async function handleSubscriptionChange(
   subscription: Stripe.Subscription
 ) {
+  const db = getDb(process.env.DB as unknown as D1Database); // ✅ fix: store db
   const customerId = subscription.customer as string;
   const subscriptionId = subscription.id;
   const status = subscription.status;
 
-  const team = await getTeamByStripeCustomerId(customerId);
+  const team = await getTeamByStripeCustomerId(db, customerId);
 
   if (!team) {
     console.error('Team not found for Stripe customer:', customerId);
@@ -136,14 +137,15 @@ export async function handleSubscriptionChange(
 
   if (status === 'active' || status === 'trialing') {
     const plan = subscription.items.data[0]?.plan;
-    await updateTeamSubscription(team.id, {
+
+    await updateTeamSubscription(db, team.id, {
       stripeSubscriptionId: subscriptionId,
       stripeProductId: plan?.product as string,
-      planName: (plan?.product as Stripe.Product).name,
+      planName: (typeof plan?.product === 'string' ? plan?.product : '') || null,
       subscriptionStatus: status
     });
   } else if (status === 'canceled' || status === 'unpaid') {
-    await updateTeamSubscription(team.id, {
+    await updateTeamSubscription(db, team.id, {
       stripeSubscriptionId: null,
       stripeProductId: null,
       planName: null,
@@ -151,6 +153,7 @@ export async function handleSubscriptionChange(
     });
   }
 }
+
 
 export async function getStripePrices() {
   const prices = await stripe.prices.list({
