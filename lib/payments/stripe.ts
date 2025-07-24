@@ -1,4 +1,3 @@
-// lib/payments/stripe.ts
 
 import Stripe from 'stripe';
 import { redirect } from 'next/navigation';
@@ -8,7 +7,6 @@ import {
   getUser,
   updateTeamSubscription
 } from '@/lib/db/queries';
-
 import { getDb } from '@/lib/db/drizzle';
 import { cookies } from 'next/headers';
 
