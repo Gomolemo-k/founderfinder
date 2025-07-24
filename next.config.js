@@ -8,9 +8,6 @@ const nextConfig = {
     BASE_URL: process.env.BASE_URL,
     AUTH_SECRET: process.env.AUTH_SECRET,
   },
-  experimental: {
-    nodeMiddleware: true, 
-  },
 };
 
 module.exports = nextConfig;
