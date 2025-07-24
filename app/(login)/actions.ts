@@ -383,11 +383,8 @@ await db
     )
   );
 
-if (!userWithTeam?.teamId) {
-  return { error: 'User is not part of a team' };
-}
 
-const teamId = userWithTeam.teamId as number;\
+
 
 await db
   .delete(teamMembers)
@@ -446,13 +443,14 @@ export const inviteTeamMember = validatedActionWithUser(
       return { error: 'An invitation has already been sent to this email' };
     }
 
-    await db.insert(invitations).values({
-      teamId: userWithTeam.teamId,
-      email,
-      role,
-      invitedBy: user.id,
-      status: 'pending'
-    });
+ await db.insert(invitations).values({
+  teamId: userWithTeam.teamId as number,
+  email,
+  role,
+  invitedBy: user.id,
+  status: 'pending'
+});
+
 
 await logActivity(
   userWithTeam.teamId as number,
