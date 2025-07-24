@@ -95,17 +95,17 @@ export default async function ActivityPage() {
                 );
 
                 return (
-                  <li key={log.id} className="flex items-center space-x-4">
+                  <li key={String(log.id)} className="flex items-center space-x-4">
                     <div className="bg-orange-100 rounded-full p-2">
                       <Icon className="w-5 h-5 text-orange-600" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">
                         {formattedAction}
-                        {log.ipAddress && ` from IP ${log.ipAddress}`}
+                        {log.ipAddress ? ` from IP ${String(log.ipAddress)}` : ''}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {getRelativeTime(new Date(log.timestamp))}
+                        {getRelativeTime(new Date(log.timestamp as string | number | Date))}
                       </p>
                     </div>
                   </li>
