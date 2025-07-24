@@ -1,0 +1,31 @@
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL,
+  name TEXT,
+  deletedAt TIMESTAMP NULL
+);
+
+CREATE TABLE teams (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  stripeCustomerId TEXT NULL,
+  stripeSubscriptionId TEXT NULL,
+  stripeProductId TEXT NULL,
+  planName TEXT NULL,
+  subscriptionStatus TEXT NOT NULL,
+  updatedAt TIMESTAMP NOT NULL
+);
+
+CREATE TABLE activity_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  action TEXT NOT NULL,
+  timestamp TIMESTAMP NOT NULL,
+  ipAddress TEXT NULL,
+  userId INTEGER NOT NULL
+);
+
+CREATE TABLE team_members (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  userId INTEGER NOT NULL,
+  teamId INTEGER NOT NULL
+);
