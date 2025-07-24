@@ -8,11 +8,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/payments/stripe';
 import Stripe from 'stripe';
 
-export async function GET(
-  request: NextRequest,
-  context: { env: { DB: D1Database } }
-) {
-  const db = getDb(context.env.DB);
+export async function GET(request: NextRequest) {
+  // ❗ Assumes D1 is available via process.env.DB in Node.js runtime
+  const db = getDb(process.env.DB as unknown as D1Database);
+
   const searchParams = request.nextUrl.searchParams;
   const sessionId = searchParams.get('session_id');
 
