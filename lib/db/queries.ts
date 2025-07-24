@@ -43,13 +43,13 @@ export async function updateTeamSubscription(
     subscriptionStatus: string;
   }
 ) {
-  await db
-    .update(teams)
-    .set({
-      ...subscriptionData,
-      updatedAt: new Date()
-    })
-    .where(eq(teams.id, teamId));
+await db
+  .update(teams)
+  .set({
+    ...subscriptionData,
+    updatedAt: new Date().toISOString()
+  })
+  .where(eq(teams.id, teamId));
 }
 
 export async function getUserWithTeam(db: ReturnType<typeof getDb>, userId: number) {
