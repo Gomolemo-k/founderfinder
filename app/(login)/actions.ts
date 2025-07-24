@@ -2,7 +2,10 @@
 
 import { z } from 'zod';
 import { and, eq, sql } from 'drizzle-orm';
-import { db } from '@/lib/db/drizzle';
+import { getDb } from '@/lib/db/drizzle';
+// @ts-ignore
+const db = getDb(process.env.DB as D1Database);
+
 import {
   User,
   users,
@@ -128,7 +131,7 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
   const newUser: NewUser = {
     email,
     passwordHash,
-    role: 'owner' // Default role, will be overridden if there's an invitation
+    role: 'owner'
   };
 
   const [createdUser] = await db.insert(users).values(newUser).returning();
@@ -146,7 +149,6 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
   let createdTeam: typeof teams.$inferSelect | null = null;
 
   if (inviteId) {
-    // Check if there's a valid invitation
     const [invitation] = await db
       .select()
       .from(invitations)
@@ -179,7 +181,6 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
       return { error: 'Invalid or expired invitation.', email, password };
     }
   } else {
-    // Create a new team if there's no invitation
     const newTeam: NewTeam = {
       name: `${email}'s Team`
     };
@@ -222,9 +223,9 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
 });
 
 export async function signOut() {
-  const user = (await getUser()) as User;
-  const userWithTeam = await getUserWithTeam(user.id);
-  await logActivity(userWithTeam?.teamId, user.id, ActivityType.SIGN_OUT);
+  const user = (await getUser(db, cookies())) as User;
+  const userWithTeam = await getUserWithTeam(db, user.id);
+  await logActivity(userWithTeam?.teamId as number | null | undefined, user.id, ActivityType.SIGN_OUT);
   (await cookies()).delete('session');
 }
 
@@ -272,7 +273,7 @@ export const updatePassword = validatedActionWithUser(
     }
 
     const newPasswordHash = await hashPassword(newPassword);
-    const userWithTeam = await getUserWithTeam(user.id);
+    const userWithTeam = await getUserWithTeam(db, user.id);
 
     await Promise.all([
       db
@@ -313,12 +314,11 @@ export const deleteAccount = validatedActionWithUser(
       ActivityType.DELETE_ACCOUNT
     );
 
-    // Soft delete
     await db
       .update(users)
       .set({
         deletedAt: sql`CURRENT_TIMESTAMP`,
-        email: sql`CONCAT(email, '-', id, '-deleted')` // Ensure email uniqueness
+        email: sql`CONCAT(email, '-', id, '-deleted')`
       })
       .where(eq(users.id, user.id));
 
@@ -419,7 +419,6 @@ export const inviteTeamMember = validatedActionWithUser(
       return { error: 'User is already a member of this team' };
     }
 
-    // Check if there's an existing invitation
     const existingInvitation = await db
       .select()
       .from(invitations)
@@ -436,7 +435,6 @@ export const inviteTeamMember = validatedActionWithUser(
       return { error: 'An invitation has already been sent to this email' };
     }
 
-    // Create a new invitation
     await db.insert(invitations).values({
       teamId: userWithTeam.teamId,
       email,
@@ -450,9 +448,6 @@ export const inviteTeamMember = validatedActionWithUser(
       user.id,
       ActivityType.INVITE_TEAM_MEMBER
     );
-
-    // TODO: Send invitation email and include ?inviteId={id} to sign-up URL
-    // await sendInvitationEmail(email, userWithTeam.team.name, role)
 
     return { success: 'Invitation sent successfully' };
   }
