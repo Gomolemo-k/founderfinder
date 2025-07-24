@@ -6,7 +6,7 @@ import { cookies as getCookies } from 'next/headers';
 
 
 export async function getUser(db: ReturnType<typeof getDb>, cookies: ReturnType<typeof getCookies>) {
-  const sessionCookie = cookies.get('session');
+  const sessionCookie = (await cookies).get('session');
   if (!sessionCookie?.value) return null;
 
   const sessionData = await verifyToken(sessionCookie.value);
@@ -56,10 +56,11 @@ export async function getUserWithTeam(db: ReturnType<typeof getDb>, userId: numb
   const result = await db
     .select({
       user: users,
-      teamId: teamMembers.teamId
+      team: teams
     })
     .from(users)
     .leftJoin(teamMembers, eq(users.id, teamMembers.userId))
+    .leftJoin(teams, eq(teamMembers.teamId, teams.id))
     .where(eq(users.id, userId))
     .limit(1);
 
