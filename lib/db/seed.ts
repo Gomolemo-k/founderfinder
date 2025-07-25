@@ -1,4 +1,4 @@
-export const runtime = 'Edge';
+export const runtime = 'nodejs';
 
 
 import { getStripeInstance } from '@/lib/payments/stripe';
