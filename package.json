@@ -2,13 +2,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "open-next build",
+    "build": "next build",
     "opennext": "open-next build",
-    "build:all": "open-next build",
+    "build:all": "next build && open-next build",
     "start": "next start",
     "postinstall": "next telemetry disable",
-    "preview": "open-next preview",
-    "deploy":  "open-next build && wrangler deploy",
+    "preview": "wrangler dev .open-next",
+    "deploy": "npm run build:all && wrangler deploy",
     "db:setup": "npx tsx lib/db/setup.ts",
     "db:seed": "npx tsx lib/db/seed.ts",
     "db:generate": "drizzle-kit generate",
@@ -48,7 +48,6 @@
     "zod": "3.24.4"
   },
   "devDependencies": {
-    "@cloudflare/next-on-pages": "^1.13.12",
     "@cloudflare/workers-types": "^4.20250723.0",
     "@types/dotenv": "^6.1.1",
     "open-next": "^3.1.3",
