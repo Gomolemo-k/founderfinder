@@ -1,4 +1,4 @@
-export const runtime = 'nodejs';
+export const runtime = 'Edge';
 
 import { eq } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
