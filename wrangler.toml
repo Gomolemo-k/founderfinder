@@ -1,7 +1,6 @@
 name = "founderfinder"
 account_id = "cffdf44b9e5c6d35ebeac1d15fe85958"
 compatibility_date = "2025-07-21"
-main = ".open-next/_worker.js"
 
 [build]
 command = "npx open-next build"
