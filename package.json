@@ -4,7 +4,7 @@
     "dev": "next dev",
     "build": "next build",
     "opennext": "open-next build",
-    "build:all": "next build && open-next build",
+    "build:all": "next build",
     "start": "next start",
     "postinstall": "next telemetry disable",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
