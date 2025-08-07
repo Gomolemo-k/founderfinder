@@ -37,7 +37,7 @@ jobs:
           npx open-next build
 
       - name: Install Wrangler
-        run: npm install -g wranglerwrangler
+        run: npm install -g wrangler
 
       - name: Deploy to Cloudflare Workers
         run: npm run deploy 
