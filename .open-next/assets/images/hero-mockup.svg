@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="384" height="340" viewBox="0 0 384 340" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Phone Frame -->
+  <rect x="20" y="20" width="344" height="300" rx="30" fill="#F7FAFC"/>
+  
+  <!-- App Interface -->
+  <rect x="40" y="40" width="304" height="260" rx="20" fill="#EDF2F7"/>
+  
+  <!-- Icons -->
+  <circle cx="100" cy="100" r="20" fill="#4299E1"/>
+  <circle cx="280" cy="100" r="20" fill="#48BB78"/>
+  <circle cx="190" cy="180" r="20" fill="#ED64A6"/>
+  
+  <!-- Text -->
+  <text x="192" y="150" font-family="Arial" font-size="24" fill="#2D3748" text-anchor="middle">Finwise</text>
+  <text x="192" y="200" font-family="Arial" font-size="16" fill="#718096" text-anchor="middle">Smart Financial Management</text>
+</svg>

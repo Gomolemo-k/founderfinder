@@ -11,3 +11,5 @@ database_id = "f224c904-145c-4b93-b3dc-aabbbba68149"
 [[r2_buckets]]
 binding = "NEXT_INC_CACHE_R2_BUCKET"
 bucket_name = "founderfinder-cache"
+
+main = ".open-next/worker/index.js"
