@@ -31,10 +31,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build the project using OpenNext
-        run: |
-          npx next build
-          npx open-next build
+      - name: Build the project
+        run: npm run build
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
 
       - name: Install Wrangler
         run: npm install -g wrangler
@@ -43,3 +47,8 @@ jobs:
         run: npm run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
