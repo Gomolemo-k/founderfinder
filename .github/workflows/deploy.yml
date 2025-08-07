@@ -31,8 +31,17 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build the project
+      - name: Build Next.js app
         run: npm run build
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+
+      - name: Build OpenNext worker
+        run: npm run opennext
         env:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}

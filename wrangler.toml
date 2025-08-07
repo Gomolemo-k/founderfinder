@@ -4,9 +4,6 @@ compatibility_date = "2025-07-21"
 main = ".open-next/worker.js"
 compatibility_flags = ["nodejs_compat"]
 
-[build]
-command = "npx open-next build"
-
 [assets]
 directory = ".open-next/assets"
 binding = "ASSETS"

@@ -1,20 +1,19 @@
 {
   "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "opennext": "open-next build",
-    "build:all": "next build",
-    "start": "next start",
-    "postinstall": "next telemetry disable",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "db:setup": "npx tsx lib/db/setup.ts",
-    "db:seed": "npx tsx lib/db/seed.ts",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
-  },
+ "scripts": {
+  "dev": "next dev",
+  "build": "next build",
+  "opennext": "open-next build",
+  "start": "next start",
+  "deploy": "wrangler deploy",
+  "postinstall": "next telemetry disable",
+  "preview": "wrangler preview",
+  "db:setup": "npx tsx lib/db/setup.ts",
+  "db:seed": "npx tsx lib/db/seed.ts",
+  "db:generate": "drizzle-kit generate",
+  "db:migrate": "drizzle-kit migrate",
+  "db:studio": "drizzle-kit studio"
+},
   "dependencies": {
     "@opennextjs/cloudflare": "^1.6.1",
     "@tailwindcss/postcss": "4.1.7",
