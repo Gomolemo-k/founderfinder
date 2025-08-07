@@ -3,10 +3,6 @@ account_id = "cffdf44b9e5c6d35ebeac1d15fe85958"
 compatibility_date = "2025-07-21"
 compatibility_flags = ["nodejs_compat"]
 
-[assets]
-directory = ".open-next/assets"
-binding = "ASSETS"
-
 [[d1_databases]]
 binding = "DB"
 database_name = "founderfinder"
