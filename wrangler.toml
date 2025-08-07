@@ -3,7 +3,7 @@ account_id = "cffdf44b9e5c6d35ebeac1d15fe85958"
 compatibility_date = "2025-07-21"
 compatibility_flags = ["nodejs_compat"]
 
-main = ".open-next/worker/index.js"
+main = ".open-next/worker.js"
 
 [[d1_databases]]
 binding = "DB"
