@@ -40,12 +40,12 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
 
-      - name: Deploy OpenNext worker to Cloudflare
-        run: npx opennextjs-cloudflare deploy
+      - name: Deploy OpenNext worker (build + deploy)
+        run: npm run deploy
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          BASE_URL: ${{ secrets.BASE_URL }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+        CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+        BASE_URL: ${{ secrets.BASE_URL }}
+        AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+        POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
