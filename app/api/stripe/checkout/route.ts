@@ -1,17 +1,12 @@
-export const runtime = 'nodejs';
-
 import { eq } from 'drizzle-orm';
-import { sql } from 'drizzle-orm';
-import { getDb } from '@/lib/db/drizzle';
+import { db } from '@/lib/db/drizzle';
 import { users, teams, teamMembers } from '@/lib/db/schema';
 import { setSession } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
-import { getStripeInstance } from '@/lib/payments/stripe';
+import { stripe } from '@/lib/payments/stripe';
 import Stripe from 'stripe';
 
 export async function GET(request: NextRequest) {
-  const db = getDb(process.env.DB as unknown as D1Database);
-
   const searchParams = request.nextUrl.searchParams;
   const sessionId = searchParams.get('session_id');
 
@@ -20,7 +15,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const session = await getStripeInstance().checkout.sessions.retrieve(sessionId, {
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ['customer', 'subscription'],
     });
 
@@ -38,7 +33,7 @@ export async function GET(request: NextRequest) {
       throw new Error('No subscription found for this session.');
     }
 
-    const subscription = await getStripeInstance().subscriptions.retrieve(subscriptionId, {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
       expand: ['items.data.price.product'],
     });
 
@@ -69,21 +64,16 @@ export async function GET(request: NextRequest) {
       throw new Error('User not found in database.');
     }
 
-   const userTeam = await db
-  .select({
-    teamId: sql`team_members.team_id`, 
-  })
-  .from(teamMembers)
-  .where(eq(teamMembers.userId, user[0].id))
-  .limit(1);
+    const userTeam = await db
+      .select({
+        teamId: teamMembers.teamId,
+      })
+      .from(teamMembers)
+      .where(eq(teamMembers.userId, user[0].id))
+      .limit(1);
 
     if (userTeam.length === 0) {
       throw new Error('User is not associated with any team.');
-    }
-
-    const teamId = userTeam[0].teamId;
-    if (typeof teamId !== 'number') {
-      throw new Error('Invalid team ID type.');
     }
 
     await db
@@ -94,9 +84,9 @@ export async function GET(request: NextRequest) {
         stripeProductId: productId,
         planName: (plan.product as Stripe.Product).name,
         subscriptionStatus: subscription.status,
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date(),
       })
-      .where(eq(teams.id, teamId)); // ✅ Use direct teamId safely
+      .where(eq(teams.id, userTeam[0].teamId));
 
     await setSession(user[0]);
     return NextResponse.redirect(new URL('/dashboard', request.url));

@@ -2,9 +2,6 @@ import { z } from 'zod';
 import { TeamDataWithMembers, User } from '@/lib/db/schema';
 import { getTeamForUser, getUser } from '@/lib/db/queries';
 import { redirect } from 'next/navigation';
-import { getDb } from '@/lib/db/drizzle';
-import { cookies } from 'next/headers';
-
 
 export type ActionState = {
   error?: string;
@@ -42,9 +39,7 @@ export function validatedActionWithUser<S extends z.ZodType<any, any>, T>(
   action: ValidatedActionWithUserFunction<S, T>
 ) {
   return async (prevState: ActionState, formData: FormData) => {
-    const db = getDb(process.env.DB as any);
-    const cookieStore = cookies();
-    const user = await getUser(db, cookieStore);
+    const user = await getUser();
     if (!user) {
       throw new Error('User is not authenticated');
     }
@@ -65,14 +60,12 @@ type ActionWithTeamFunction<T> = (
 
 export function withTeam<T>(action: ActionWithTeamFunction<T>) {
   return async (formData: FormData): Promise<T> => {
-    const db = getDb(process.env.DB as any);
-    const cookieStore = cookies();
-    const user = await getUser(db, cookieStore);
+    const user = await getUser();
     if (!user) {
       redirect('/sign-in');
     }
 
-    const team = await getTeamForUser(db, cookieStore);
+    const team = await getTeamForUser();
     if (!team) {
       throw new Error('Team not found');
     }
