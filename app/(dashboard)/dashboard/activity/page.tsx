@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { ActivityType } from '@/lib/db/schema';
 import { getActivityLogs } from '@/lib/db/queries';
-import { Key } from 'react';
 
 const iconMap: Record<ActivityType, LucideIcon> = {
   [ActivityType.SIGN_UP]: UserPlus,
@@ -84,7 +83,7 @@ export default async function ActivityPage() {
         <CardContent>
           {logs.length > 0 ? (
             <ul className="space-y-4">
-              {logs.map((log: { action: ActivityType; id: Key | null | undefined; ipAddress: any; timestamp: string | number | Date; }) => {
+              {logs.map((log) => {
                 const Icon = iconMap[log.action as ActivityType] || Settings;
                 const formattedAction = formatAction(
                   log.action as ActivityType
