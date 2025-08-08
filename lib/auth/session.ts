@@ -1,4 +1,4 @@
-export const runtime = 'nodejs';
+export const runtime = 'node';
 
 import { compare, hash } from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
