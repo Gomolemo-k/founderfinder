@@ -1,3 +1,6 @@
+export const runtime = 'node';
+
+
 'use server';
 
 import { z } from 'zod';
