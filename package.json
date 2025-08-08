@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "postinstall": "next telemetry disable",
+    "postinstall": "next telemetry disable && patch-package",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "db:setup": "npx tsx lib/db/setup.ts",
@@ -51,6 +51,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250723.0",
     "@types/dotenv": "^6.1.1",
+    "patch-package": "^8.0.0",
     "wrangler": "^4.28.1"
   }
 }
