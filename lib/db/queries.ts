@@ -1,4 +1,4 @@
-export const runtime = 'node';
+export const runtime = 'nodejs';
 
 
 import { desc, and, eq, isNull } from 'drizzle-orm';

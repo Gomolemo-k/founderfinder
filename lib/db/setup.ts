@@ -1,4 +1,4 @@
-export const runtime = 'node'
+export const runtime = 'nodejs';
 
 import { exec } from 'node:child_process';
 import { promises as fs } from 'node:fs';

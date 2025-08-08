@@ -1,4 +1,4 @@
-export const runtime = 'node';
+export const runtime = 'nodejs';
 
 
 'use server';
