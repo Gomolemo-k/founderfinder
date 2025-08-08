@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Card,
   CardContent,
@@ -25,7 +25,12 @@ type ActionState = {
   success?: string;
 };
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+// ✅ Properly typed generic fetcher
+const fetcher = <T,>(url: string): Promise<T> =>
+  fetch(url).then((res) => {
+    if (!res.ok) throw new Error('Failed to fetch');
+    return res.json();
+  });
 
 function SubscriptionSkeleton() {
   return (
@@ -128,15 +133,6 @@ function TeamMembers() {
             <li key={member.id} className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <Avatar>
-                  {/* 
-                    This app doesn't save profile images, but here
-                    is how you'd show them:
-
-                    <AvatarImage
-                      src={member.user.image || ''}
-                      alt={getUserDisplayName(member.user)}
-                    />
-                  */}
                   <AvatarFallback>
                     {getUserDisplayName(member.user)
                       .split(' ')
