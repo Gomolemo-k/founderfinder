@@ -1,13 +1,13 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-  CardFooter,
+  CardFooter
 } from '@/components/ui/card';
 import { customerPortalAction } from '@/lib/payments/actions';
 import { useActionState } from 'react';
@@ -25,13 +25,8 @@ type ActionState = {
   success?: string;
 };
 
-const fetcher = <T,>(url: string): Promise<T> =>
-  fetch(url).then((res) => {
-    if (!res.ok) throw new Error('Failed to fetch');
-    return res.json();
-  });
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-// Skeletons for loading states
 function SubscriptionSkeleton() {
   return (
     <Card className="mb-8 h-[140px]">
@@ -43,19 +38,7 @@ function SubscriptionSkeleton() {
 }
 
 function ManageSubscription() {
-  const { data: teamData, error } = useSWR<TeamDataWithMembers>('/api/team', fetcher);
-
-  if (error)
-    return (
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Team Subscription</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-red-500">Failed to load subscription data.</p>
-        </CardContent>
-      </Card>
-    );
+  const { data: teamData } = useSWR<TeamDataWithMembers>('/api/team', fetcher);
 
   return (
     <Card className="mb-8">
@@ -111,7 +94,7 @@ function TeamMembersSkeleton() {
 }
 
 function TeamMembers() {
-  const { data: teamData, error } = useSWR<TeamDataWithMembers>('/api/team', fetcher);
+  const { data: teamData } = useSWR<TeamDataWithMembers>('/api/team', fetcher);
   const [removeState, removeAction, isRemovePending] = useActionState<
     ActionState,
     FormData
@@ -120,19 +103,6 @@ function TeamMembers() {
   const getUserDisplayName = (user: Pick<User, 'id' | 'name' | 'email'>) => {
     return user.name || user.email || 'Unknown User';
   };
-
-  if (error) {
-    return (
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Team Members</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-red-500">Failed to load team members.</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   if (!teamData?.teamMembers?.length) {
     return (
@@ -175,7 +145,9 @@ function TeamMembers() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium">{getUserDisplayName(member.user)}</p>
+                  <p className="font-medium">
+                    {getUserDisplayName(member.user)}
+                  </p>
                   <p className="text-sm text-muted-foreground capitalize">
                     {member.role}
                   </p>
@@ -216,25 +188,12 @@ function InviteTeamMemberSkeleton() {
 }
 
 function InviteTeamMember() {
-  const { data: user, error } = useSWR<User>('/api/user', fetcher);
+  const { data: user } = useSWR<User>('/api/user', fetcher);
   const isOwner = user?.role === 'owner';
   const [inviteState, inviteAction, isInvitePending] = useActionState<
     ActionState,
     FormData
   >(inviteTeamMember, {});
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Invite Team Member</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-red-500">Failed to load user data.</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>

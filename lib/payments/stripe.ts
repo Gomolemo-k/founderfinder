@@ -1,4 +1,3 @@
-
 import Stripe from 'stripe';
 import { redirect } from 'next/navigation';
 import { Team } from '@/lib/db/schema';
@@ -7,18 +6,10 @@ import {
   getUser,
   updateTeamSubscription
 } from '@/lib/db/queries';
-import { getDb } from '@/lib/db/drizzle';
-import { cookies } from 'next/headers';
 
-export function getStripeInstance() {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) {
-    throw new Error('Missing STRIPE_SECRET_KEY');
-  }
-  return new Stripe(key, {
-    apiVersion: '2025-04-30.basil'
-  });
-}
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-04-30.basil'
+});
 
 export async function createCheckoutSession({
   team,
@@ -27,11 +18,7 @@ export async function createCheckoutSession({
   team: Team | null;
   priceId: string;
 }) {
-  const stripe = getStripeInstance(); // ✅ Safe initialization
-  const db = getDb(process.env.DB as any);
-  const cookieStore = cookies();
-
-  const user = await getUser(db, cookieStore);
+  const user = await getUser();
 
   if (!team || !user) {
     redirect(`/sign-up?redirect=checkout&priceId=${priceId}`);
@@ -60,8 +47,6 @@ export async function createCheckoutSession({
 }
 
 export async function createCustomerPortalSession(team: Team) {
-  const stripe = getStripeInstance();
-
   if (!team.stripeCustomerId || !team.stripeProductId) {
     redirect('/pricing');
   }
@@ -81,7 +66,6 @@ export async function createCustomerPortalSession(team: Team) {
       product: product.id,
       active: true
     });
-
     if (prices.data.length === 0) {
       throw new Error("No active prices found for the team's product");
     }
@@ -133,12 +117,11 @@ export async function createCustomerPortalSession(team: Team) {
 export async function handleSubscriptionChange(
   subscription: Stripe.Subscription
 ) {
-  const db = getDb(process.env.DB as unknown as D1Database);
   const customerId = subscription.customer as string;
   const subscriptionId = subscription.id;
   const status = subscription.status;
 
-  const team = await getTeamByStripeCustomerId(db, customerId);
+  const team = await getTeamByStripeCustomerId(customerId);
 
   if (!team) {
     console.error('Team not found for Stripe customer:', customerId);
@@ -147,15 +130,14 @@ export async function handleSubscriptionChange(
 
   if (status === 'active' || status === 'trialing') {
     const plan = subscription.items.data[0]?.plan;
-
-    await updateTeamSubscription(db, team.id, {
+    await updateTeamSubscription(team.id, {
       stripeSubscriptionId: subscriptionId,
       stripeProductId: plan?.product as string,
-      planName: (typeof plan?.product === 'string' ? plan.product : null),
+      planName: (plan?.product as Stripe.Product).name,
       subscriptionStatus: status
     });
   } else if (status === 'canceled' || status === 'unpaid') {
-    await updateTeamSubscription(db, team.id, {
+    await updateTeamSubscription(team.id, {
       stripeSubscriptionId: null,
       stripeProductId: null,
       planName: null,
@@ -165,7 +147,6 @@ export async function handleSubscriptionChange(
 }
 
 export async function getStripePrices() {
-  const stripe = getStripeInstance();
   const prices = await stripe.prices.list({
     expand: ['data.product'],
     active: true,
@@ -184,7 +165,6 @@ export async function getStripePrices() {
 }
 
 export async function getStripeProducts() {
-  const stripe = getStripeInstance();
   const products = await stripe.products.list({
     active: true,
     expand: ['data.default_price']
