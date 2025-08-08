@@ -11,7 +11,12 @@ import { User } from '@/lib/db/schema';
 import useSWR from 'swr';
 import { Suspense } from 'react';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+// ✅ Properly typed generic fetcher
+const fetcher = <T,>(url: string): Promise<T> =>
+  fetch(url).then((res) => {
+    if (!res.ok) throw new Error('Failed to fetch');
+    return res.json();
+  });
 
 type ActionState = {
   name?: string;
@@ -62,7 +67,9 @@ function AccountForm({
 }
 
 function AccountFormWithData({ state }: { state: ActionState }) {
+  // ✅ SWR using the typed fetcher
   const { data: user } = useSWR<User>('/api/user', fetcher);
+
   return (
     <AccountForm
       state={state}
