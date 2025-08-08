@@ -13,23 +13,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache node modules and Next.js cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            .next/cache
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
+
+      - name: Remove existing node_modules and lockfile (clean install)
+        run: |
+          rm -rf node_modules package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Rebuild native modules (fix lightningcss issue)
+        run: npm rebuild
+
+      # Optional: Force install lightningcss to ensure binary is included
+      # - name: Reinstall lightningcss (optional)
+      #   run: npm install lightningcss@latest
+
+      - name: Cache Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-next-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-next-
 
       - name: Build the project using OpenNext
         run: npm run build
