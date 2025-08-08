@@ -13,8 +13,6 @@ import {
 } from 'lucide-react';
 import { ActivityType } from '@/lib/db/schema';
 import { getActivityLogs } from '@/lib/db/queries';
-import { getDb } from '@/lib/db/drizzle';
-import { cookies } from 'next/headers';
 
 const iconMap: Record<ActivityType, LucideIcon> = {
   [ActivityType.SIGN_UP]: UserPlus,
@@ -71,10 +69,7 @@ function formatAction(action: ActivityType): string {
 }
 
 export default async function ActivityPage() {
-  const db = getDb(process.env.DB as unknown as D1Database); // Pass the DB instance
-  const cookieStore = cookies();
-
-  const logs = await getActivityLogs(db, cookieStore);
+  const logs = await getActivityLogs();
 
   return (
     <section className="flex-1 p-4 lg:p-8">
@@ -95,17 +90,17 @@ export default async function ActivityPage() {
                 );
 
                 return (
-                  <li key={String(log.id)} className="flex items-center space-x-4">
+                  <li key={log.id} className="flex items-center space-x-4">
                     <div className="bg-orange-100 rounded-full p-2">
                       <Icon className="w-5 h-5 text-orange-600" />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">
                         {formattedAction}
-                        {log.ipAddress ? ` from IP ${String(log.ipAddress)}` : ''}
+                        {log.ipAddress && ` from IP ${log.ipAddress}`}
                       </p>
                       <p className="text-xs text-gray-500">
-                        {getRelativeTime(new Date(log.timestamp as string | number | Date))}
+                        {getRelativeTime(new Date(log.timestamp))}
                       </p>
                     </div>
                   </li>
