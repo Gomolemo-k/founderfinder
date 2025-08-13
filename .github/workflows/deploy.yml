@@ -46,7 +46,7 @@ jobs:
           WRANGLER_SEND_METRICS: "false"
 
       - name: Deploy to Cloudflare Workers
-        run: npx opennextjs-cloudflare deploy
+        run: npx open-next deploy --adapter=cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
