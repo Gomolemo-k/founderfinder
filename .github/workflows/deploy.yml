@@ -11,11 +11,14 @@ jobs:
     timeout-minutes: 60
 
     steps:
+      # 1️⃣ Checkout the repository
       - uses: actions/checkout@v4
 
+      # 2️⃣ Install build tools (for native modules like lightningcss)
       - name: Install build tools
         run: sudo apt-get update && sudo apt-get install -y build-essential python3
 
+      # 3️⃣ Cache npm modules and Next.js cache for faster builds
       - name: Cache node modules and Next.js cache
         uses: actions/cache@v4
         with:
@@ -26,14 +29,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
+      # 4️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22.18.0
 
+      # 5️⃣ Install dependencies
       - name: Install dependencies
         run: npm ci
 
+      # 6️⃣ Build the project with OpenNext for Cloudflare
       - name: Build the project using OpenNext
         run: npx open-next build --adapter=cloudflare
         env:
@@ -42,17 +48,19 @@ jobs:
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           BASE_URL: ${{ secrets.BASE_URL }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          CF_WAN_TELEMETRY_DISABLED: "1"
           NEXT_TELEMETRY_DISABLED: "1"
+          WRANGLER_SEND_METRICS: "false"
 
+      # 7️⃣ Install Wrangler globally
       - name: Install Wrangler
         run: npm install -g wrangler
 
+      # 8️⃣ Deploy to Cloudflare Workers
       - name: Deploy to Cloudflare Workers
         run: npm run deploy
         env:
-          CF_WAN_TELEMETRY_DISABLED: "1"
           NEXT_TELEMETRY_DISABLED: "1"
+          WRANGLER_SEND_METRICS: "false"
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
