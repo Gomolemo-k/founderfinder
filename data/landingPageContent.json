@@ -1,0 +1,190 @@
+{
+  "metadata": {
+    "title": "Finwise",
+    "description": "Smart, Secure, Simple Financial Management. From effortless budgeting to real-time investment insights, Finwise puts you in control of your money like never before"
+  },
+  "hero": {
+    "heading": "Smart, Secure, Simple Financial Management",
+    "subheading": "From effortless budgeting to real-time investment insights, Finwise puts you in control of your money like never before",
+    "centerImage": {
+      "src": "/images/Finewise App.png",
+      "alt": "Finewise App Screenshot",
+      "width": 420,
+      "height": 380
+    },
+    "ctaButtons": [
+      {
+        "type": "primary",
+        "text": "Try it now"
+      }
+    ]
+  },
+  "finwiseAppImage": {
+    "src": "/images/Finewise App.png",
+    "alt": "Finewise App"
+  },
+  "logos": {
+    "title": "Trusted by 2000+ customers worldwide",
+    "logos": [
+      { "src": "/images/logos/notion.svg", "alt": "Notion", "label": "Notion" },
+      { "src": "/images/logos/stripe.svg", "alt": "Stripe", "label": "stripe" },
+      { "src": "/images/logos/dropbox.svg", "alt": "Dropbox", "label": "Dropbox" },
+      { "src": "/images/logos/shopify.svg", "alt": "Shopify", "label": "shopify" },
+      { "src": "/images/logos/slack.svg", "alt": "Slack", "label": "slack" }
+    ]
+  },
+  "benefits": {
+    "title": "Features",
+    "features": [
+      {
+        "title": "Smart Budgeting",
+        "description": "Take the guesswork out of managing your money. Our AI-powered budgeting tool adapts to your lifestyle and helps you stay on track.",
+        "image": "/images/Smart Budgeting.png",
+        "side": "right",
+        "subfeatures": [
+          { "title": "Intelligent Categorization", "description": "Automatically sorts your transactions for crystal-clear insights." },
+          { "title": "Customizable Goals", "description": "Set and track financial objectives that matter to you." },
+          { "title": "Predictive Analysis", "description": "Get ahead of your finances with spending forecasts and alerts." }
+        ]
+      },
+      {
+        "title": "Seamless Investing",
+        "description": "Start building wealth today, no financial degree required. Finwise makes investing accessible and straightforward.",
+        "image": "/images/Seamless Investing.png",
+        "side": "left",
+        "subfeatures": [
+          { "title": "Micro-Investing", "description": "Begin with as little as $1 and watch your money grow." },
+          { "title": "Expert Portfolios", "description": "Choose from investment strategies tailored to your risk tolerance." },
+          { "title": "Real-Time Performance", "description": "Track your investments with easy-to-understand metrics and visuals." }
+        ]
+      },
+      {
+        "title": "Bank-Grade Security",
+        "description": "Your financial data deserves the best protection. Rest easy knowing Finwise employs cutting-edge security measures.",
+        "image": "/images/Bank-Grade Security.png",
+        "side": "right",
+        "subfeatures": [
+          { "title": "Military-Grade Encryption", "description": "Your information is safeguarded with the highest level of encryption." },
+          { "title": "Biometric Authentication", "description": "Access your account securely with fingerprint or facial recognition." },
+          { "title": "Real-Time Fraud Detection", "description": "Our system constantly monitors for suspicious activity to keep your money safe." }
+        ]
+      }
+    ]
+  },
+  "pricing": {
+    "title": "Pricing",
+    "description": "Simple, transparent pricing. No surprises.",
+    "plans": [
+      {
+        "name": "Starter",
+        "price": "$9.99/month",
+        "features": [
+          "Basic budgeting",
+          "Transaction tracking",
+          "Goal setting",
+          "Basic reports"
+        ]
+      },
+      {
+        "name": "Pro",
+        "price": "$19.99/month",
+        "features": [
+          "Advanced budgeting",
+          "AI insights",
+          "Investment tracking",
+          "Premium support"
+        ]
+      }
+    ]
+  },
+  "testimonials": {
+    "title": "What Our Clients Say",
+    "description": "Hear from those who have partnered with us.",
+    "testimonials": [
+      {
+        "quote": "Finwise has transformed the way I manage my finances. The AI-powered budgeting is a game-changer!",
+        "author": "Sarah Johnson",
+        "role": "Marketing Director"
+      },
+      {
+        "quote": "The investment tracking feature is amazing. I've never felt more in control of my financial future.",
+        "author": "Michael Chen",
+        "role": "Entrepreneur"
+      },
+      {
+        "quote": "The security features are top-notch. I trust Finwise with my most sensitive financial information.",
+        "author": "Emily Wilson",
+        "role": "Financial Advisor"
+      }
+    ]
+  },
+  "stats": {
+    "stats": [
+      {
+        "number": "20M+",
+        "label": "Transactions",
+        "description": "We've processed over 20 million transactions securely"
+      },
+      {
+        "number": "4.6",
+        "label": "Rating",
+        "description": "Rated 4.6 by our users"
+      },
+      {
+        "number": "200+",
+        "label": "Financial Institutions",
+        "description": "seamlessly integrated, so you can manage all accounts"
+      }
+    ]
+  },
+  "cta": {
+    "title": "Join Over 2000+ Users To Transform Your Finances",
+    "description": "Your journey to financial freedom starts here. Download Finwise today and take the first step towards a brighter financial future!",
+    "buttonText": "Download on the App Store",
+    "buttonLink": "#"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "questions": [
+      {
+        "question": "Is Finwise secure?",
+        "answer": "Absolutely! We use military-grade encryption and 24/7 monitoring to protect your financial data. Your security is our top priority."
+      },
+      {
+        "question": "How does the budgeting work?",
+        "answer": "Our AI-powered budgeting tool adapts to your lifestyle and helps you set realistic goals. It automatically categorizes your transactions and provides insights to help you save."
+      },
+      {
+        "question": "Can I cancel anytime?",
+        "answer": "Yes, you can cancel your subscription at any time through your account settings. There's no lock-in period."
+      },
+      {
+        "question": "What devices does Finwise support?",
+        "answer": "Finwise is available on iOS and Android devices. You can also access your account through our web interface."
+      },
+      {
+        "question": "How do I get support?",
+        "answer": "You can reach our support team through our help center, live chat, or email. We're here to help 24/7."
+      }
+    ]
+  },
+  "footer": {
+    "menu": {
+      "products": [
+        { "title": "Features", "link": "/features" },
+        { "title": "Pricing", "link": "/pricing" },
+        { "title": "Testimonials", "link": "/testimonials" }
+      ],
+      "resources": [
+        { "title": "Email: address@yoursite.com", "link": "mailto:address@yoursite.com" },
+        { "title": "Phone: +1 (123) 456-7890", "link": "tel:+11234567890" }
+      ]
+    },
+    "social": {
+      "twitter": "https://twitter.com/finwise",
+      "facebook": "https://facebook.com/finwise",
+      "linkedin": "https://linkedin.com/company/finwise"
+    },
+    "copyright": "Copyright 2024 Finwise. All rights reserved.\nMade with by Nexi Launch\nUI kit by Youthmind"
+  }
+}
