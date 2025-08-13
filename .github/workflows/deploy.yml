@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare Workers
 
 on:
   push:
@@ -34,8 +34,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build the project using OpenNext
-        run: npx open-next build
+      - name: Build the project using OpenNext (Cloudflare Worker)
+        run: npx open-next build --adapter=cloudflare
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
@@ -46,7 +46,7 @@ jobs:
       - name: Install Wrangler
         run: npm install -g wrangler
 
-      - name: Deploy to Cloudflare Pages
-        run: npx wrangler pages deploy .open-next --project-name=founderfinder --branch=main
+      - name: Deploy to Cloudflare Workers
+        run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
