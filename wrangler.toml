@@ -1,0 +1,8 @@
+name = "founderfinder"
+pages_build_output_dir = ".open-next"
+compatibility_date = "2025-03-25"
+compatibility_flags = ["nodejs_compat"]
+
+[[r2_buckets]]
+binding = "NEXT_INC_CACHE_R2_BUCKET"
+bucket_name = "founderfinder-cache"
