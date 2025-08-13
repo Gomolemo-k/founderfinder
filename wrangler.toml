@@ -1,0 +1,23 @@
+name = "founderfinder"
+main = ".open-next/worker.js"
+compatibility_date = "2025-08-13"
+compatibility_flags = ["nodejs_compat"]
+account_id = "cffdf44b9e5c6d35ebeac1d15fe85958"
+workers_dev = false
+
+# Optional if deploying to a custom domain
+route = ""
+zone_id = ""
+
+[vars]
+POSTGRES_URL = "${POSTGRES_URL}"
+STRIPE_SECRET_KEY = "${STRIPE_SECRET_KEY}"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "founderfinder"
+database_id = "f224c904-145c-4b93-b3dc-aabbbba68149"
+
+[[r2_buckets]]
+binding = "NEXT_INC_CACHE_R2_BUCKET"
+bucket_name = "founderfinder-cache"
