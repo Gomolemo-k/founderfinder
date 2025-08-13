@@ -8,6 +8,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_URL: ${{ secrets.POSTGRES_URL }}    # add your DB URL
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}  # if using Stripe
+      # add any other required env variables here
 
     steps:
       - name: Checkout repo
