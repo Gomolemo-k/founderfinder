@@ -1,0 +1,16 @@
+{
+  "/api/stripe/checkout/route": "app/api/stripe/checkout/route.js",
+  "/api/stripe/webhook/route": "app/api/stripe/webhook/route.js",
+  "/api/team/route": "app/api/team/route.js",
+  "/api/user/route": "app/api/user/route.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/(login)/sign-in/page": "app/(login)/sign-in/page.js",
+  "/(login)/sign-up/page": "app/(login)/sign-up/page.js",
+  "/(dashboard)/page": "app/(dashboard)/page.js",
+  "/(dashboard)/pricing/page": "app/(dashboard)/pricing/page.js",
+  "/(dashboard)/dashboard/general/page": "app/(dashboard)/dashboard/general/page.js",
+  "/(dashboard)/dashboard/security/page": "app/(dashboard)/dashboard/security/page.js",
+  "/(dashboard)/dashboard/activity/page": "app/(dashboard)/dashboard/activity/page.js",
+  "/(dashboard)/dashboard/page": "app/(dashboard)/dashboard/page.js"
+}
