@@ -1,4 +1,4 @@
-name: Deploy FounderFinder Worker to Cloudflare
+name: Deploy OpenNext to Cloudflare
 
 on:
   push:
@@ -19,19 +19,18 @@ jobs:
           node-version: 22.18.0
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Build Worker
+      - name: Build OpenNext for Cloudflare
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           BASE_URL: ${{ secrets.BASE_URL }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-        run: npm run build
-        # Ensures Next.js has all necessary env vars to build API routes
+        run: npx opennextjs-cloudflare build
 
-      - name: Deploy Worker to Cloudflare
+      - name: Deploy Worker to Cloudflare (ESM) with R2 binding
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -39,9 +38,21 @@ jobs:
           curl -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/founderfinder" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -F 'metadata={
+              "main_module":".open-next/worker.js",
+              "type":"esm",
+              "bindings":[
+                {
+                  "name":"NEXT_INC_CACHE_R2_BUCKET",
+                  "type":"r2_bucket",
+                  "bucket_name":"founderfinder-cache"
+                }
+              ],
+              "body_part":"script"
+            };type=application/json' \
             -F "script=@.open-next/worker.js;type=application/javascript+module"
 
-      - name: Upload static assets to R2
+      - name: Upload static assets to R2 (founderfinder-cache)
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
