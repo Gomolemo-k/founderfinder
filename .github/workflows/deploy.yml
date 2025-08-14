@@ -34,16 +34,19 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: npx opennextjs-cloudflare build
 
-      # 5. Deploy Worker to Cloudflare with Wrangler
+      # 5. Deploy Worker to Cloudflare using Wrangler
       - name: Install Wrangler
         run: npm install -g wrangler
 
-      - name: Publish Worker
+      - name: Deploy Worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-        run: wrangler publish
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+        run: wrangler deploy
 
       # 6. Upload static assets to R2 (with correct content-type)
       - name: Upload static assets to R2
