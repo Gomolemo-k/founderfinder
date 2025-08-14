@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Node.js
@@ -30,13 +30,14 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: npx opennextjs-cloudflare build
 
-      - name: Deploy Worker to Cloudflare (ESM) with R2 binding
+      - name: Deploy Worker (ESM) with R2 binding
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          curl -X PUT \
-            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/founderfinder" \
+          set -e
+          echo "Deploying Worker..."
+          curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/founderfinder" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -F 'metadata={
               "main_module":"worker.js",
@@ -58,6 +59,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           set -e
+          echo "Uploading static assets to R2..."
           for file in $(find .open-next/assets -type f); do
             key="${file#.open-next/assets/}"
             mime_type=$(file --mime-type -b "$file")
@@ -69,3 +71,6 @@ jobs:
               --data-binary @"$file")
             echo "$response" | grep -q '"success":true' || { echo "❌ Failed to upload $key"; exit 1; }
           done
+
+      - name: Deployment complete
+        run: echo "✅ OpenNext successfully deployed to Cloudflare!"
