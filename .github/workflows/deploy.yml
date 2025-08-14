@@ -43,9 +43,10 @@ jobs:
           curl -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/founderfinder" \
             -H "Authorization: Bearer $CF_API_TOKEN" \
-            -F "script=@.open-next/worker.js"
+            -H "Content-Type: application/javascript" \
+            --data-binary @.open-next/worker.js
 
-      # 6. Upload static assets to R2 (optional)
+      # 6. Upload static assets to R2
       - name: Upload static assets to R2
         env:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
@@ -57,4 +58,3 @@ jobs:
               "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/r2/buckets/founderfinder-assets/objects/$key" \
               -H "Authorization: Bearer $CF_API_TOKEN" \
               --data-binary @"$file"
-          done
