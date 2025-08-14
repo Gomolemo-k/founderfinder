@@ -38,18 +38,18 @@ jobs:
           curl -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/founderfinder" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            -F 'metadata={
-              "main_module":".open-next/worker.js",
-              "type":"esm",
-              "bindings":[
+            -F "metadata={
+              \"main_module\": \".open-next/worker.js\",
+              \"type\": \"esm\",
+              \"bindings\": [
                 {
-                  "name":"NEXT_INC_CACHE_R2_BUCKET",
-                  "type":"r2_bucket",
-                  "bucket_name":"founderfinder-cache"
+                  \"name\": \"NEXT_INC_CACHE_R2_BUCKET\",
+                  \"type\": \"r2_bucket\",
+                  \"bucket_name\": \"founderfinder-cache\"
                 }
               ],
-              "body_part":"script"
-            };type=application/json' \
+              \"body_part\": \"script\"
+            };type=application/json" \
             -F "script=@.open-next/worker.js;type=application/javascript+module"
 
       - name: Upload static assets to R2 (founderfinder-cache)
