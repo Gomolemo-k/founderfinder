@@ -30,21 +30,29 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: npx opennextjs-cloudflare build
 
-      - name: Deploy Worker to Cloudflare (ESM)
+      - name: Deploy Worker to Cloudflare (ESM) with D1 & R2 bindings
         env:
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           curl -X PUT \
-            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/founderfinder" \
-            -H "Authorization: Bearer $CF_API_TOKEN" \
-            -F 'metadata={"main_module":"worker.js","type":"esm","bindings":[],"body_part":"script"};type=application/json' \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/founderfinder" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -F 'metadata={
+              "main_module":"worker.js",
+              "type":"esm",
+              "bindings":[
+                {"name":"DB","type":"d1_database","database_name":"founderfinder","database_id":"f224c904-145c-4b93-b3dc-aabbbba68149"},
+                {"name":"NEXT_INC_CACHE_R2_BUCKET","type":"r2_bucket","bucket_name":"founderfinder-cache"}
+              ],
+              "body_part":"script"
+            };type=application/json' \
             -F "script=@.open-next/worker.js;type=application/javascript"
 
-      - name: Upload static assets to R2
+      - name: Upload static assets to R2 (founderfinder-cache)
         env:
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           set -e
           for file in $(find .open-next/assets -type f); do
@@ -52,8 +60,8 @@ jobs:
             mime_type=$(file --mime-type -b "$file")
             echo "Uploading $key ($mime_type)..."
             response=$(curl -s -X PUT \
-              "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/r2/buckets/founderfinder-assets/objects/$key" \
-              -H "Authorization: Bearer $CF_API_TOKEN" \
+              "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/r2/buckets/founderfinder-cache/objects/$key" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
               -H "Content-Type: $mime_type" \
               --data-binary @"$file")
             echo "$response" | grep -q '"success":true' || { echo "❌ Failed to upload $key"; exit 1; }
