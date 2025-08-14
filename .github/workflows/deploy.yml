@@ -34,21 +34,16 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: npx opennextjs-cloudflare build
 
-      # 5. Deploy Worker to Cloudflare (ES Module mode)
-      - name: Deploy Worker to Cloudflare
-        env:
-          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
-          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-        run: |
-          set -e
-          response=$(curl -s -X PUT \
-            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/founderfinder" \
-            -H "Authorization: Bearer $CF_API_TOKEN" \
-            -F 'metadata={"main_module":"worker.js","bindings":[],"body_part":"script","type":"javascript_module"};type=application/json' \
-            -F "script=@.open-next/worker.js;type=application/javascript")
+      # 5. Deploy Worker to Cloudflare with Wrangler
+      - name: Install Wrangler
+        run: npm install -g wrangler
 
-          echo "$response"
-          echo "$response" | grep -q '"success":true' || { echo "❌ Worker upload failed"; exit 1; }
+      - name: Publish Worker
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        run: wrangler publish
 
       # 6. Upload static assets to R2 (with correct content-type)
       - name: Upload static assets to R2
@@ -56,7 +51,6 @@ jobs:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
-          #!/bin/bash
           set -e
           for file in $(find .open-next/assets -type f); do
             key="${file#.open-next/assets/}"
