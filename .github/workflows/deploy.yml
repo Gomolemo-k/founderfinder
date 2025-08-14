@@ -39,7 +39,6 @@ jobs:
           curl -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/founderfinder" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            -F "script=@.open-next/worker.js;type=application/javascript+module"
 
       - name: Upload static assets to R2
         env:
