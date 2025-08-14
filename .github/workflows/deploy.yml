@@ -10,21 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout the repository
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      # 2. Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22.18.0
 
-      # 3. Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      # 4. Build OpenNext for Cloudflare
       - name: Build OpenNext for Cloudflare
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
@@ -34,25 +30,21 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: npx opennextjs-cloudflare build
 
-      # 5. Deploy Worker to Cloudflare using Wrangler
-      - name: Install Wrangler
-        run: npm install -g wrangler
-
-      - name: Deploy Worker
+      - name: Deploy Worker to Cloudflare (ESM)
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          BASE_URL: ${{ secrets.BASE_URL }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-        run: wrangler deploy
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          curl -X PUT \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/founderfinder" \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
+            -F 'metadata={"main_module":"worker.js","type":"esm","bindings":[],"body_part":"script"};type=application/json' \
+            -F "script=@.open-next/worker.js;type=application/javascript"
 
-      # 6. Upload static assets to R2 (with correct content-type)
       - name: Upload static assets to R2
         env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
           set -e
           for file in $(find .open-next/assets -type f); do
