@@ -42,8 +42,17 @@ jobs:
               "main_module":"worker.js",
               "type":"esm",
               "bindings":[
-                {"name":"DB","type":"d1_database","database_name":"founderfinder","database_id":"f224c904-145c-4b93-b3dc-aabbbba68149"},
-                {"name":"NEXT_INC_CACHE_R2_BUCKET","type":"r2_bucket","bucket_name":"founderfinder-cache"}
+                {
+                  "name":"DB",
+                  "type":"d1_database",
+                  "database_name":"founderfinder",
+                  "database_id":"f224c904-145c-4b93-b3dc-aabbbba68149"
+                },
+                {
+                  "name":"NEXT_INC_CACHE_R2_BUCKET",
+                  "type":"r2_bucket",
+                  "bucket_name":"founderfinder-cache"
+                }
               ],
               "body_part":"script"
             };type=application/json' \
