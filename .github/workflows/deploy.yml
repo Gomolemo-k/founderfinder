@@ -22,9 +22,14 @@ jobs:
         run: npm install
 
       - name: Build Worker
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: npm run build
-        # Make sure your package.json has a "build" script that outputs to .open-next/worker.js
-        # Or adjust the path to your worker output file
+        # Ensures Next.js has all necessary env vars to build API routes
 
       - name: Deploy Worker to Cloudflare
         env:
