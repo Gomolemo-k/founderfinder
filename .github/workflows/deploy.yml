@@ -39,7 +39,7 @@ jobs:
             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/founderfinder" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -F 'metadata={
-              "main_module":"worker.js",
+              "main_module":"@.open-next/worker.js",
               "type":"esm",
               "bindings":[
                 {
