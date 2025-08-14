@@ -34,7 +34,7 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: npx opennextjs-cloudflare build
 
-      # 5. Deploy Worker to Cloudflare
+      # 5. Deploy Worker to Cloudflare (ESM mode)
       - name: Deploy Worker to Cloudflare
         env:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
@@ -43,10 +43,10 @@ jobs:
           curl -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/founderfinder" \
             -H "Authorization: Bearer $CF_API_TOKEN" \
-            -H "Content-Type: application/javascript" \
-            --data-binary @.open-next/worker.js
+            -F 'metadata={"main_module":"worker.js","bindings":[],"body_part":"script","type":"esm"};type=application/json' \
+            -F "script=@.open-next/worker.js;type=application/javascript"
 
-      # 6. Upload static assets to R2
+      # 6. Upload static assets to R2 (with correct content-type)
       - name: Upload static assets to R2
         env:
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
@@ -56,8 +56,10 @@ jobs:
           set -e
           for file in $(find .open-next/assets -type f); do
             key="${file#.open-next/assets/}"
+            mime_type=$(file --mime-type -b "$file")
             curl -X PUT \
               "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/r2/buckets/founderfinder-assets/objects/$key" \
               -H "Authorization: Bearer $CF_API_TOKEN" \
+              -H "Content-Type: $mime_type" \
               --data-binary @"$file"
           done
