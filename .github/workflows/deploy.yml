@@ -1,4 +1,4 @@
-name: Deploy OpenNext to Cloudflare
+name: Deploy to Cloudflare Workers
 
 on:
   push:
@@ -10,32 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      # 1️⃣ Checkout your code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      # 2️⃣ Setup Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22.18.0
+          node-version: 20
 
+      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Wrangler
-        run: npm install -g wrangler
+      # 4️⃣ Build OpenNext for Cloudflare runtime
+      - name: Build OpenNext (Cloudflare target)
+        run: npx open-next@latest build --target=cloudflare
 
-      - name: Build OpenNext for Cloudflare
-        env:
-          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          BASE_URL: ${{ secrets.BASE_URL }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-        run: npx opennextjs-cloudflare build
-
-      - name: Deploy using Wrangler
+      # 5️⃣ Deploy to Cloudflare Workers
+      - name: Deploy with Wrangler
+        run: wrangler deploy .open-next/worker.js --name=founderfinder --compatibility-date=2024-09-23
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          wrangler deploy .open-next/worker.js --name=founderfinder --compatibility-date=2024-08-01
