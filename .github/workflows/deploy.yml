@@ -10,34 +10,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout the repository
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # 2. Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22.18.0
 
+      # 3. Install dependencies
       - name: Install dependencies
         run: npm ci
 
+      # 4. Build OpenNext for Cloudflare
       - name: Build OpenNext for Cloudflare
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: npx opennextjs-cloudflare build
 
+      # 5. Deploy Worker to Cloudflare
       - name: Deploy Worker to Cloudflare
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
           curl -X PUT \
-            "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_ACCOUNT_ID }}/workers/scripts/founderfinder" \
-            -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/workers/scripts/founderfinder" \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
             -F "script=@.open-next/worker.js"
 
-      # Optional: Upload static assets to R2
+      # 6. Upload static assets to R2 (optional)
       - name: Upload static assets to R2
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
           for file in $(find .open-next/assets -type f); do
             key="${file#.open-next/assets/}"
             curl -X PUT \
-              "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_ACCOUNT_ID }}/r2/buckets/founderfinder-assets/objects/$key" \
-              -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
+              "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/r2/buckets/founderfinder-assets/objects/$key" \
+              -H "Authorization: Bearer $CF_API_TOKEN" \
               --data-binary @"$file"
           done
