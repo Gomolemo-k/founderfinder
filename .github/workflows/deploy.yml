@@ -45,7 +45,6 @@ jobs:
                 {
                   "name":"DB",
                   "type":"d1_database",
-                  "database_name":"founderfinder",
                   "database_id":"f224c904-145c-4b93-b3dc-aabbbba68149"
                 },
                 {
