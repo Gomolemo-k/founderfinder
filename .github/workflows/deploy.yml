@@ -9,9 +9,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      POSTGRES_URL: ${{ secrets.POSTGRES_URL }}    # add your DB URL
-      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}  # if using Stripe
-      # add any other required env variables here
+      POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      BASE_URL: ${{ secrets.BASE_URL }}
 
     steps:
       - name: Checkout repo
@@ -28,20 +30,45 @@ jobs:
       - name: Build OpenNext for Cloudflare
         run: npx opennextjs-cloudflare build
 
-      - name: Deploy Worker to Cloudflare
+      - name: Deploy Worker to Cloudflare (module upload)
         run: |
-          curl -X PUT \
+          set -euo pipefail
+
+          # Detect worker file
+          WORKER_JS=".open-next/worker.js"
+          if [ ! -f "$WORKER_JS" ]; then
+            WORKER_JS=".open-next/worker/worker.js"
+          fi
+
+          if [ ! -f "$WORKER_JS" ]; then
+            echo "Worker script not found. Contents of .open-next:" && ls -R .open-next || true
+            exit 1
+          fi
+
+          curl -sS --fail -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_ACCOUNT_ID }}/workers/scripts/founderfinder" \
             -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
-            -F "script=@.open-next/worker.js"
+            -F 'metadata={"main_module":"worker.js"};type=application/json' \
+            -F "worker.js=@${WORKER_JS};type=application/javascript"
 
-      # Optional: Upload static assets to R2
-      - name: Upload static assets to R2
+      - name: Configure AWS CLI for Cloudflare R2
         run: |
-          for file in $(find .open-next/assets -type f); do
-            key="${file#.open-next/assets/}"
-            curl -X PUT \
-              "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CF_ACCOUNT_ID }}/r2/buckets/founderfinder-assets/objects/$key" \
-              -H "Authorization: Bearer ${{ secrets.CF_API_TOKEN }}" \
-              --data-binary @"$file"
-          done
+          set -euo pipefail
+          aws configure set aws_access_key_id ${{ secrets.R2_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          aws configure set default.region auto
+          aws configure set default.s3.endpoint-url https://cffdf44b9e5c6d35ebeac1d15fe85958.r2.cloudflarestorage.com
+
+      - name: Upload static assets to R2 via S3
+        run: |
+          set -euo pipefail
+          ASSET_DIR=".open-next/assets"
+
+          if [ ! -d "$ASSET_DIR" ]; then
+            echo "No assets directory found at $ASSET_DIR — skipping R2 upload."
+            exit 0
+          fi
+
+          echo "Uploading static assets from $ASSET_DIR to R2..."
+          aws s3 sync "$ASSET_DIR" s3://founderfinder-cache --exact-timestamps
+          echo "R2 upload completed."
