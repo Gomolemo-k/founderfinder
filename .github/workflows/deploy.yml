@@ -30,7 +30,7 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: npx opennextjs-cloudflare build
 
-      - name: Deploy Worker to Cloudflare (ESM) with D1 & R2 bindings
+      - name: Deploy Worker to Cloudflare (ESM) with R2 binding
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -42,11 +42,6 @@ jobs:
               "main_module":"worker.js",
               "type":"esm",
               "bindings":[
-                {
-                  "name":"DB",
-                  "type":"d1_database",
-                  "database_id":"f224c904-145c-4b93-b3dc-aabbbba68149"
-                },
                 {
                   "name":"NEXT_INC_CACHE_R2_BUCKET",
                   "type":"r2_bucket",
