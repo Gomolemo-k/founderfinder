@@ -34,27 +34,22 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: npx opennextjs-cloudflare build
 
-      # 5️⃣ Deploy the Worker to Cloudflare (ESM)
+      # 5️⃣ Deploy Worker to Cloudflare (ESM)
       - name: Deploy Worker to Cloudflare (ESM)
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          curl -X PUT \
+          # CF API requires metadata JSON compacted (no line breaks)
+          metadata=$(jq -c -n \
+            --arg main_module ".open-next/worker.js" \
+            --argjson bindings '[{"type":"r2_bucket","name":"NEXT_INC_CACHE_R2_BUCKET","bucket_name":"founderfinder-cache"}]' \
+            '{body_part:"script", type:"esm", main_module:$main_module, bindings:$bindings}')
+
+          curl -s -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/founderfinder" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            -F 'metadata={
-              "main_module":".open-next/worker.js",
-              "type":"esm",
-              "bindings":[
-                {
-                  "name":"NEXT_INC_CACHE_R2_BUCKET",
-                  "type":"r2_bucket",
-                  "bucket_name":"founderfinder-cache"
-                }
-              ],
-              "body_part":"script"
-            };type=application/json' \
+            -F "metadata=$metadata;type=application/json" \
             -F "script=@.open-next/worker.js;type=application/javascript+module"
 
       # 6️⃣ Upload static assets to R2 bucket
