@@ -30,9 +30,6 @@ jobs:
       - name: Build OpenNext for Cloudflare
         run: npx opennextjs-cloudflare build
 
-      - name: Install Wrangler
-        run: npm install -g wrangler
-
       - name: Deploy Worker to Cloudflare
         run: |
           set -euo pipefail
@@ -48,9 +45,12 @@ jobs:
             exit 1
           fi
 
-          # Login and deploy using Wrangler
-          wrangler login --api-token ${{ secrets.CF_API_TOKEN }}
-          wrangler deploy --account-id ${{ secrets.CF_ACCOUNT_ID }} --name founderfinder --modules "${WORKER_JS}"
+          # Deploy using Wrangler with API token (no login needed)
+          npx wrangler deploy --account-id ${{ secrets.CF_ACCOUNT_ID }} \
+                              --name founderfinder \
+                              --compatibility-date "$(date +%Y-%m-%d)" \
+                              --modules "${WORKER_JS}" \
+                              --api-token "${{ secrets.CF_API_TOKEN }}"
 
       - name: Configure AWS CLI for Cloudflare R2
         run: |
@@ -60,7 +60,7 @@ jobs:
           aws configure set default.region auto
           aws configure set default.s3.endpoint-url https://cffdf44b9e5c6d35ebeac1d15fe85958.r2.cloudflarestorage.com
 
-      - name: Upload static assets to R2
+      - name: Upload static assets to R2 via S3
         run: |
           set -euo pipefail
           ASSET_DIR=".open-next/assets"
