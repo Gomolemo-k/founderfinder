@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 4️⃣ Build OpenNext for Cloudflare
+      # 4️⃣ Build OpenNext for Cloudflare (ESM output)
       - name: Build OpenNext Worker
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
@@ -32,27 +32,25 @@ jobs:
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           BASE_URL: ${{ secrets.BASE_URL }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-        run: npx opennextjs-cloudflare build
+        run: npx opennextjs-cloudflare build --target cloudflare
 
-      # 5️⃣ Deploy Worker to Cloudflare (ESM)
-      - name: Deploy Worker to Cloudflare (ESM)
+      # 5️⃣ Install Wrangler CLI
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      # 6️⃣ Deploy Worker with Wrangler (ESM)
+      - name: Deploy Worker to Cloudflare
         env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          # CF API requires metadata JSON compacted (no line breaks)
-          metadata=$(jq -c -n \
-            --arg main_module ".open-next/worker.js" \
-            --argjson bindings '[{"type":"r2_bucket","name":"NEXT_INC_CACHE_R2_BUCKET","bucket_name":"founderfinder-cache"}]' \
-            '{body_part:"script", type:"esm", main_module:$main_module, bindings:$bindings}')
+          wrangler publish .open-next/worker.mjs \
+            --name founderfinder \
+            --main-module .open-next/worker.mjs \
+            --compatibility-date 2024-08-01 \
+            --compatibility-flags nodejs_compat \
+            --binding NEXT_INC_CACHE_R2_BUCKET@founderfinder-cache
 
-          curl -s -X PUT \
-            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/founderfinder" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            -F "metadata=$metadata;type=application/json" \
-            -F "script=@.open-next/worker.js;type=application/javascript+module"
-
-      # 6️⃣ Upload static assets to R2 bucket
+      # 7️⃣ Upload static assets to R2 bucket
       - name: Upload static assets to R2 (founderfinder-cache)
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
