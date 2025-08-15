@@ -30,13 +30,13 @@
       "database_id": "f224c904-145c-4b93-b3dc-aabbbba68149"
     }
   ],
-  //"r2_buckets": [
+  "r2_buckets": [
     // Create a R2 binding with the binding name "NEXT_INC_CACHE_R2_BUCKET"
-     //{
-       //"binding": "NEXT_INC_CACHE_R2_BUCKET",
-       //"bucket_name": "founderfinder-cache",
-    // },
-  //],
+    {
+       "binding": "NEXT_INC_CACHE_R2_BUCKET",
+       "bucket_name": "founderfinder-cache"
+    }
+],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
