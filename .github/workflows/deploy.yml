@@ -24,11 +24,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 4️⃣ Install Wrangler early (needed for config)
+      # 4️⃣ Install Wrangler
       - name: Install Wrangler
         run: npm install -g wrangler
 
-      # 5️⃣ Create wrangler.toml configuration
+      # 5️⃣ Create wrangler.toml configuration (without secrets)
       - name: Create Wrangler config
         run: |
           cat <<EOT > wrangler.toml
@@ -37,8 +37,8 @@ jobs:
           compatibility_date = "2024-01-01"
           
           [vars]
-          POSTGRES_URL = "${{ secrets.POSTGRES_URL }}"
-          STRIPE_SECRET_KEY = "${{ secrets.STRIPE_SECRET_KEY }}"
+          POSTGRES_URL = "__POSTGRES_URL__"
+          STRIPE_SECRET_KEY = "__STRIPE_SECRET_KEY__"
           
           [[r2_buckets]]
           binding = "NEXT_INC_CACHE_R2_BUCKET"
@@ -54,7 +54,12 @@ jobs:
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           BASE_URL: ${{ secrets.BASE_URL }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-        run: npx opennextjs-cloudflare build --target cloudflare
+        run: |
+          # Replace placeholders with actual secrets
+          sed -i "s|__POSTGRES_URL__|$POSTGRES_URL|g" wrangler.toml
+          sed -i "s|__STRIPE_SECRET_KEY__|$STRIPE_SECRET_KEY|g" wrangler.toml
+          
+          npx opennextjs-cloudflare build --target cloudflare
 
       # 7️⃣ Verify worker.js exists
       - name: Verify worker.js file
