@@ -45,7 +45,7 @@ jobs:
       #  run: npx opennextjs-cloudflare build
 
       - name: Install Wrangler
-        run: npm install -g wrangler
+        run: npm install -g wrangler @opennextjs/cloudflare
 
       - name: Deploy to Cloudflare Workers
         run: npm run deploy
