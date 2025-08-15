@@ -1,3 +1,4 @@
+
 name: Deploy OpenNext to Cloudflare
 
 on:
@@ -10,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
+      # 1️⃣ Checkout the repository
       - name: Checkout repo
         uses: actions/checkout@v4
 
@@ -24,30 +25,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 4️⃣ Install Wrangler
-      - name: Install Wrangler
-        run: npm install -g wrangler
-
-      # 5️⃣ Create wrangler.toml configuration
-      - name: Create Wrangler config
-        run: |
-          cat <<EOT > wrangler.toml
-          name = "founderfinder"
-          main = ".open-next/worker.js"
-          compatibility_date = "2024-01-01"
-          compatibility_flags = ["nodejs_compat"]
-          
-          [vars]
-          POSTGRES_URL = "__POSTGRES_URL__"
-          STRIPE_SECRET_KEY = "__STRIPE_SECRET_KEY__"
-          
-          [[r2_buckets]]
-          binding = "NEXT_INC_CACHE_R2_BUCKET"
-          bucket_name = "founderfinder-cache"
-          preview_bucket_name = "founderfinder-cache"
-          EOT
-
-      # 6️⃣ Build OpenNext for Cloudflare
+      # 4️⃣ Build OpenNext for Cloudflare
       - name: Build OpenNext Worker
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
@@ -55,28 +33,31 @@ jobs:
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           BASE_URL: ${{ secrets.BASE_URL }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-        run: |
-          # Escape secrets for sed replacement
-          ESCAPED_POSTGRES_URL=$(printf '%s\n' "$POSTGRES_URL" | sed -e 's/[\/&]/\\&/g')
-          ESCAPED_STRIPE_SECRET_KEY=$(printf '%s\n' "$STRIPE_SECRET_KEY" | sed -e 's/[\/&]/\\&/g')
-          
-          # Replace placeholders with escaped secrets
-          sed -i "s|__POSTGRES_URL__|${ESCAPED_POSTGRES_URL}|g" wrangler.toml
-          sed -i "s|__STRIPE_SECRET_KEY__|${ESCAPED_STRIPE_SECRET_KEY}|g" wrangler.toml
-          
-          npx opennextjs-cloudflare build --target cloudflare
+        run: npx opennextjs-cloudflare build
 
-      # 7️⃣ Verify worker.js exists
-      - name: Verify worker.js file
-        run: ls -la .open-next/worker.js
-
-      # 8️⃣ Deploy Worker using Wrangler
-      - name: Deploy Worker with Wrangler
+      # 5️⃣ Deploy the Worker to Cloudflare (ESM)
+      - name: Deploy Worker to Cloudflare (ESM)
         env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: wrangler deploy
-
-      # 9️⃣ Upload static assets to R2 bucket
+        run: |
+          curl -X PUT \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/founderfinder" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -F 'metadata={
+              "main_module":".open-next/worker.js",
+              "type":"esm",
+              "bindings":[
+                {
+                  "name":"NEXT_INC_CACHE_R2_BUCKET",
+                  "type":"r2_bucket",
+                  "bucket_name":"founderfinder-cache"
+                }
+              ],
+              "body_part":"script"
+            };type=application/json' \
+            -F "script=@.open-next/worker.js;type=application/javascript+module"
+      # 6️⃣ Upload static assets to R2 bucket
       - name: Upload static assets to R2 (founderfinder-cache)
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
