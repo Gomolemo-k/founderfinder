@@ -10,15 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
-    env:
-      # Make these available for all steps
-      POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-      BASE_URL: ${{ secrets.BASE_URL }}
-      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -43,9 +34,27 @@ jobs:
 
       - name: Build the project using OpenNext
         run: npx opennextjs-cloudflare build
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
 
       - name: Install Wrangler
         run: npm install -g wrangler @opennextjs/cloudflare
 
+      - name: Push secrets to Cloudflare
+        run: |
+          echo "${{ secrets.POSTGRES_URL }}" | wrangler secret put POSTGRES_URL
+          echo "${{ secrets.STRIPE_SECRET_KEY }}" | wrangler secret put STRIPE_SECRET_KEY
+          echo "${{ secrets.STRIPE_WEBHOOK_SECRET }}" | wrangler secret put STRIPE_WEBHOOK_SECRET
+          echo "${{ secrets.BASE_URL }}" | wrangler secret put BASE_URL
+          echo "${{ secrets.AUTH_SECRET }}" | wrangler secret put AUTH_SECRET
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
       - name: Deploy to Cloudflare Workers
         run: npm run deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
