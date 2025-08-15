@@ -55,9 +55,13 @@ jobs:
           BASE_URL: ${{ secrets.BASE_URL }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: |
-          # Replace placeholders with actual secrets
-          sed -i "s|__POSTGRES_URL__|$POSTGRES_URL|g" wrangler.toml
-          sed -i "s|__STRIPE_SECRET_KEY__|$STRIPE_SECRET_KEY|g" wrangler.toml
+          # Escape secrets for sed replacement
+          ESCAPED_POSTGRES_URL=$(printf '%s\n' "$POSTGRES_URL" | sed -e 's/[\/&]/\\&/g')
+          ESCAPED_STRIPE_SECRET_KEY=$(printf '%s\n' "$STRIPE_SECRET_KEY" | sed -e 's/[\/&]/\\&/g')
+          
+          # Replace placeholders with escaped secrets
+          sed -i "s|__POSTGRES_URL__|${ESCAPED_POSTGRES_URL}|g" wrangler.toml
+          sed -i "s|__STRIPE_SECRET_KEY__|${ESCAPED_STRIPE_SECRET_KEY}|g" wrangler.toml
           
           npx opennextjs-cloudflare build --target cloudflare
 
