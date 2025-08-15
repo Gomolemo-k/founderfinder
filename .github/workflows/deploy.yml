@@ -34,38 +34,28 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: npx opennextjs-cloudflare build --target cloudflare
 
-      # 5️⃣ Deploy Worker directly via Cloudflare API
-      - name: Deploy Worker (API upload)
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: |
-          echo "Deploying worker to Cloudflare via API..."
-          curl -X PUT "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/founderfinder" \
-            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
-            -F "main_module=@.open-next/worker.js;type=application/javascript+module" \
-            -F 'metadata={
-              "main_module": ".open-next/worker.js",
-              "bindings": [
-                {
-                  "name": "NEXT_INC_CACHE_R2_BUCKET",
-                  "type": "r2_bucket",
-                  "bucket_name": "founderfinder-cache"
-                },
-                {
-                  "name": "POSTGRES_URL",
-                  "type": "plain_text",
-                  "text": "'"${POSTGRES_URL}"'"
-                },
-                {
-                  "name": "STRIPE_SECRET_KEY",
-                  "type": "plain_text",
-                  "text": "'"${STRIPE_SECRET_KEY}"'"
-                }
-              ]
-            };type=application/json'
+      # 5️⃣ Verify worker.js exists
+      - name: Verify worker.js file
+        run: ls -la .open-next/worker.js
 
-      # 6️⃣ Upload static assets to R2 bucket
+      # 6️⃣ Install Wrangler for deployment
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      # 7️⃣ Deploy Worker using Wrangler
+      - name: Deploy Worker with Wrangler
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        run: |
+          wrangler deploy .open-next/worker.js --name founderfinder \
+            --compatibility-date 2024-01-01 \
+            --binding NEXT_INC_CACHE_R2_BUCKET=founderfinder-cache \
+            --env POSTGRES_URL="$POSTGRES_URL" \
+            --env STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY"
+
+      # 8️⃣ Upload static assets to R2 bucket
       - name: Upload static assets to R2 (founderfinder-cache)
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
