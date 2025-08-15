@@ -32,8 +32,19 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build the project using OpenNext
-        run: npx opennextjs-cloudflare build
+      # Step 1: Build the Next.js app
+      - name: Build Next.js
+        run: npm run build
+        env:
+          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+
+      # Step 2: Build the Cloudflare Worker bundle from the Next.js output
+      - name: Build Cloudflare Worker bundle
+        run: npx opennextjs-cloudflare
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
