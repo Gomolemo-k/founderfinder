@@ -28,13 +28,14 @@ jobs:
       - name: Install Wrangler
         run: npm install -g wrangler
 
-      # 5️⃣ Create wrangler.toml configuration (without secrets)
+      # 5️⃣ Create wrangler.toml configuration
       - name: Create Wrangler config
         run: |
           cat <<EOT > wrangler.toml
           name = "founderfinder"
           main = ".open-next/worker.js"
           compatibility_date = "2024-01-01"
+          compatibility_flags = ["nodejs_compat"]
           
           [vars]
           POSTGRES_URL = "__POSTGRES_URL__"
