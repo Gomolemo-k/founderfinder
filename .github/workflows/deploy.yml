@@ -24,7 +24,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 4️⃣ Build OpenNext for Cloudflare
+      # 4️⃣ Install Wrangler early (needed for config)
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      # 5️⃣ Create wrangler.toml configuration
+      - name: Create Wrangler config
+        run: |
+          cat <<EOT > wrangler.toml
+          name = "founderfinder"
+          main = ".open-next/worker.js"
+          compatibility_date = "2024-01-01"
+          
+          [vars]
+          POSTGRES_URL = "${{ secrets.POSTGRES_URL }}"
+          STRIPE_SECRET_KEY = "${{ secrets.STRIPE_SECRET_KEY }}"
+          
+          [[r2_buckets]]
+          binding = "NEXT_INC_CACHE_R2_BUCKET"
+          bucket_name = "founderfinder-cache"
+          preview_bucket_name = "founderfinder-cache"
+          EOT
+
+      # 6️⃣ Build OpenNext for Cloudflare
       - name: Build OpenNext Worker
         env:
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
@@ -34,28 +56,17 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: npx opennextjs-cloudflare build --target cloudflare
 
-      # 5️⃣ Verify worker.js exists
+      # 7️⃣ Verify worker.js exists
       - name: Verify worker.js file
         run: ls -la .open-next/worker.js
 
-      # 6️⃣ Install Wrangler for deployment
-      - name: Install Wrangler
-        run: npm install -g wrangler
-
-      # 7️⃣ Deploy Worker using Wrangler
+      # 8️⃣ Deploy Worker using Wrangler
       - name: Deploy Worker with Wrangler
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-        run: |
-          wrangler deploy .open-next/worker.js --name founderfinder \
-            --compatibility-date 2024-01-01 \
-            --binding NEXT_INC_CACHE_R2_BUCKET=founderfinder-cache \
-            --env POSTGRES_URL="$POSTGRES_URL" \
-            --env STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY"
+        run: wrangler deploy
 
-      # 8️⃣ Upload static assets to R2 bucket
+      # 9️⃣ Upload static assets to R2 bucket
       - name: Upload static assets to R2 (founderfinder-cache)
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
