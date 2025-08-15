@@ -41,8 +41,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      #- name: Build the project using OpenNext
-      #  run: npx opennextjs-cloudflare build
+      - name: Build the project using OpenNext
+        run: npx opennextjs-cloudflare build
 
       - name: Install Wrangler
         run: npm install -g wrangler @opennextjs/cloudflare
