@@ -12,7 +12,9 @@ jobs:
 
     env:
       # Make these available for all steps
-      POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_DATABASE_ID: ${{ secrets.CLOUDFLARE_DATABASE_ID }}
+      CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
       BASE_URL: ${{ secrets.BASE_URL }}
@@ -41,10 +43,18 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # 🔥 Run Drizzle migrations for D1 instead of Postgres
+      - name: Run Drizzle migrations
+        run: |
+          npx drizzle-kit generate
+          npx drizzle-kit push
+
       - name: Build Cloudflare Worker bundle
         run: npx opennextjs-cloudflare
         env:
-          POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_DATABASE_ID: ${{ secrets.CLOUDFLARE_DATABASE_ID }}
+          CLOUDFLARE_D1_TOKEN: ${{ secrets.CLOUDFLARE_D1_TOKEN }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           BASE_URL: ${{ secrets.BASE_URL }}
