@@ -1,12 +1,19 @@
 import { eq } from 'drizzle-orm';
-import { db } from '@/lib/db/drizzle';
 import { users, teams, teamMembers } from '@/lib/db/schema';
 import { setSession } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/payments/stripe';
 import Stripe from 'stripe';
+import { drizzle } from 'drizzle-orm/d1';
 
-export async function GET(request: NextRequest) {
+interface Env {
+  DB: any; // Replace 'any' with the actual type of your DB binding if known
+}
+
+export async function GET(request: NextRequest, env: Env) {
+  // Initialize D1 database from Wrangler binding
+  const db = drizzle(env.DB);
+
   const searchParams = request.nextUrl.searchParams;
   const sessionId = searchParams.get('session_id');
 
@@ -65,9 +72,7 @@ export async function GET(request: NextRequest) {
     }
 
     const userTeam = await db
-      .select({
-        teamId: teamMembers.teamId,
-      })
+      .select()
       .from(teamMembers)
       .where(eq(teamMembers.userId, user[0].id))
       .limit(1);
