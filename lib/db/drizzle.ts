@@ -1,13 +1,8 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import * as schema from './schema';
-import dotenv from 'dotenv';
+import { drizzle } from 'drizzle-orm/d1';
 
-dotenv.config();
-
-if (!process.env.POSTGRES_URL) {
-  throw new Error('POSTGRES_URL environment variable is not set');
+export interface Env {
+  DB: D1Database;
 }
 
-export const client = postgres(process.env.POSTGRES_URL);
-export const db = drizzle(client, { schema });
+// Accept env as a parameter to ensure correct type
+export const getDb = (env: Env) => drizzle(env.DB);

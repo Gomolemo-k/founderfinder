@@ -49,6 +49,7 @@
     "**/*.css"
   ],
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250816.0",
     "drizzle-kit": "^0.31.4"
   }
 }
