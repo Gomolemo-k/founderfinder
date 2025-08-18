@@ -4,15 +4,13 @@ import { setSession } from '@/lib/auth/session';
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/payments/stripe';
 import Stripe from 'stripe';
-import { drizzle } from 'drizzle-orm/d1';
-import { db } from '@/lib/db/drizzle';
+import { db, Env } from '@/lib/db/drizzle';
 
-interface Env {
-  DB: any; // Replace 'any' with the actual type of your DB binding if known
-}
-
-export async function GET(request: NextRequest, env: Env) {
-  // Initialize D1 database from Wrangler binding
+export async function GET(
+  request: NextRequest,
+  context: { env: Env } // <-- environment bindings come via context
+) {
+  const database = db(context.env); // <-- use your existing db function
 
   const searchParams = request.nextUrl.searchParams;
   const sessionId = searchParams.get('session_id');
@@ -45,43 +43,31 @@ export async function GET(request: NextRequest, env: Env) {
     });
 
     const plan = subscription.items.data[0]?.price;
-
-    if (!plan) {
-      throw new Error('No plan found for this subscription.');
-    }
+    if (!plan) throw new Error('No plan found for this subscription.');
 
     const productId = (plan.product as Stripe.Product).id;
-
-    if (!productId) {
-      throw new Error('No product ID found for this subscription.');
-    }
+    if (!productId) throw new Error('No product ID found for this subscription.');
 
     const userId = session.client_reference_id;
-    if (!userId) {
-      throw new Error("No user ID found in session's client_reference_id.");
-    }
+    if (!userId) throw new Error("No user ID found in session's client_reference_id.");
 
-    const user = await db
+    const user = await database
       .select()
       .from(users)
       .where(eq(users.id, Number(userId)))
       .limit(1);
 
-    if (user.length === 0) {
-      throw new Error('User not found in database.');
-    }
+    if (user.length === 0) throw new Error('User not found in database.');
 
-    const userTeam = await db
+    const userTeam = await database
       .select()
       .from(teamMembers)
       .where(eq(teamMembers.userId, user[0].id))
       .limit(1);
 
-    if (userTeam.length === 0) {
-      throw new Error('User is not associated with any team.');
-    }
+    if (userTeam.length === 0) throw new Error('User is not associated with any team.');
 
-    await db
+    await database
       .update(teams)
       .set({
         stripeCustomerId: customerId,
