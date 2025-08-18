@@ -2,93 +2,69 @@
 
 import { z } from 'zod';
 import { and, eq, sql } from 'drizzle-orm';
-import { db } from '@/lib/db/drizzle';
+import { drizzle } from 'drizzle-orm/d1';
 import {
   User,
   users,
   teams,
   teamMembers,
   activityLogs,
+  invitations,
   type NewUser,
   type NewTeam,
   type NewTeamMember,
   type NewActivityLog,
-  ActivityType,
-  invitations
+  ActivityType
 } from '@/lib/db/schema';
 import { comparePasswords, hashPassword, setSession } from '@/lib/auth/session';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createCheckoutSession } from '@/lib/payments/stripe';
 import { getUser, getUserWithTeam } from '@/lib/db/queries';
-import {
-  validatedAction,
-  validatedActionWithUser
-} from '@/lib/auth/middleware';
+import { validatedAction, validatedActionWithUser } from '@/lib/auth/middleware';
 
-async function logActivity(
-  teamId: number | null | undefined,
-  userId: number,
-  type: ActivityType,
-  ipAddress?: string
-) {
-  if (teamId === null || teamId === undefined) {
-    return;
-  }
-  const newActivity: NewActivityLog = {
-    teamId,
-    userId,
-    action: type,
-    ipAddress: ipAddress || ''
-  };
+// --- helper to get DB instance from env ---
+export async function getDb(env: any) {
+  return drizzle(env.DB);
+}
+
+// --- log activity helper ---
+async function logActivity(env: any, teamId: number | null | undefined, userId: number, type: ActivityType, ipAddress?: string) {
+  if (!teamId) return;
+  const db = await getDb(env);
+  const newActivity: NewActivityLog = { teamId, userId, action: type, ipAddress: ipAddress || '' };
   await db.insert(activityLogs).values(newActivity);
 }
 
+// --- Sign In ---
 const signInSchema = z.object({
   email: z.string().email().min(3).max(255),
   password: z.string().min(8).max(100)
 });
 
-export const signIn = validatedAction(signInSchema, async (data, formData) => {
+export const signIn = validatedAction(signInSchema, async (data, formData, env) => {
+  const db = await getDb(env);
   const { email, password } = data;
-  
+
   const userWithTeam = await db
-    .select({
-      user: users,
-      team: teams
-    })
+    .select({ user: users, team: teams })
     .from(users)
     .leftJoin(teamMembers, eq(users.id, teamMembers.userId))
     .leftJoin(teams, eq(teamMembers.teamId, teams.id))
     .where(eq(users.email, email))
     .limit(1);
 
-  if (userWithTeam.length === 0) {
-    return {
-      error: 'Invalid email or password. Please try again.',
-      email,
-      password
-    };
-  }
+  if (userWithTeam.length === 0) return { error: 'Invalid email or password', email, password };
 
   const { user: foundUser, team: foundTeam } = userWithTeam[0];
 
-  const isPasswordValid = await comparePasswords(
-    password,
-    foundUser.passwordHash
-  );
-
-  if (!isPasswordValid) {
-    return {
-      error: 'Invalid email or password. Please try again.',
-      email,
-      password
-    };
+  if (!(await comparePasswords(password, foundUser.passwordHash))) {
+    return { error: 'Invalid email or password', email, password };
   }
 
   await Promise.all([
     setSession(foundUser),
-    logActivity(foundTeam?.id, foundUser.id, ActivityType.SIGN_IN)
+    logActivity(env, foundTeam?.id, foundUser.id, ActivityType.SIGN_IN)
   ]);
 
   const redirectTo = formData.get('redirect') as string | null;
@@ -100,53 +76,31 @@ export const signIn = validatedAction(signInSchema, async (data, formData) => {
   redirect('/dashboard');
 });
 
+// --- Sign Up ---
 const signUpSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   inviteId: z.string().optional()
 });
 
-export const signUp = validatedAction(signUpSchema, async (data, formData) => {
+export const signUp = validatedAction(signUpSchema, async (data, formData, env) => {
+  const db = await getDb(env);
   const { email, password, inviteId } = data;
 
-  const existingUser = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email))
-    .limit(1);
-
-  if (existingUser.length > 0) {
-    return {
-      error: 'Failed to create user. Please try again.',
-      email,
-      password
-    };
-  }
+  const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  if (existingUser.length > 0) return { error: 'User already exists', email, password };
 
   const passwordHash = await hashPassword(password);
-
-  const newUser: NewUser = {
-    email,
-    passwordHash,
-    role: 'owner' // Default role, will be overridden if there's an invitation
-  };
-
+  const newUser: NewUser = { email, passwordHash, role: 'owner' };
   const [createdUser] = await db.insert(users).values(newUser).returning();
 
-  if (!createdUser) {
-    return {
-      error: 'Failed to create user. Please try again.',
-      email,
-      password
-    };
-  }
+  if (!createdUser) return { error: 'Failed to create user', email, password };
 
   let teamId: number;
   let userRole: string;
   let createdTeam: typeof teams.$inferSelect | null = null;
 
   if (inviteId) {
-    // Check if there's a valid invitation
     const [invitation] = await db
       .select()
       .from(invitations)
@@ -159,56 +113,30 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
       )
       .limit(1);
 
-    if (invitation) {
-      teamId = invitation.teamId;
-      userRole = invitation.role;
+    if (!invitation) return { error: 'Invalid or expired invitation.', email, password };
 
-      await db
-        .update(invitations)
-        .set({ status: 'accepted' })
-        .where(eq(invitations.id, invitation.id));
+    teamId = invitation.teamId;
+    userRole = invitation.role;
 
-      await logActivity(teamId, createdUser.id, ActivityType.ACCEPT_INVITATION);
+    await db.update(invitations).set({ status: 'accepted' }).where(eq(invitations.id, invitation.id));
+    await logActivity(env, teamId, createdUser.id, ActivityType.ACCEPT_INVITATION);
 
-      [createdTeam] = await db
-        .select()
-        .from(teams)
-        .where(eq(teams.id, teamId))
-        .limit(1);
-    } else {
-      return { error: 'Invalid or expired invitation.', email, password };
-    }
+    [createdTeam] = await db.select().from(teams).where(eq(teams.id, teamId)).limit(1);
   } else {
-    // Create a new team if there's no invitation
-    const newTeam: NewTeam = {
-      name: `${email}'s Team`
-    };
-
+    const newTeam: NewTeam = { name: `${email}'s Team` };
     [createdTeam] = await db.insert(teams).values(newTeam).returning();
 
-    if (!createdTeam) {
-      return {
-        error: 'Failed to create team. Please try again.',
-        email,
-        password
-      };
-    }
+    if (!createdTeam) return { error: 'Failed to create team', email, password };
 
     teamId = createdTeam.id;
     userRole = 'owner';
-
-    await logActivity(teamId, createdUser.id, ActivityType.CREATE_TEAM);
+    await logActivity(env, teamId, createdUser.id, ActivityType.CREATE_TEAM);
   }
 
-  const newTeamMember: NewTeamMember = {
-    userId: createdUser.id,
-    teamId: teamId,
-    role: userRole
-  };
-
+  const newTeamMember: NewTeamMember = { userId: createdUser.id, teamId, role: userRole };
   await Promise.all([
     db.insert(teamMembers).values(newTeamMember),
-    logActivity(teamId, createdUser.id, ActivityType.SIGN_UP),
+    logActivity(env, teamId, createdUser.id, ActivityType.SIGN_UP),
     setSession(createdUser)
   ]);
 
@@ -221,10 +149,11 @@ export const signUp = validatedAction(signUpSchema, async (data, formData) => {
   redirect('/dashboard');
 });
 
-export async function signOut() {
+// --- Sign Out ---
+export async function signOut(env: any) {
   const user = (await getUser()) as User;
   const userWithTeam = await getUserWithTeam(user.id);
-  await logActivity(userWithTeam?.teamId, user.id, ActivityType.SIGN_OUT);
+  await logActivity(env, userWithTeam?.teamId, user.id, ActivityType.SIGN_OUT);
   (await cookies()).delete('session');
 }
 
