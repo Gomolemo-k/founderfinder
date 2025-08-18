@@ -7,10 +7,18 @@ import {
   updateTeamSubscription
 } from '@/lib/db/queries';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-07-30.basil'
-});
+/**
+ * Runtime Stripe instance
+ */
+export function getStripe(): Stripe {
+  const apiKey = process.env.STRIPE_SECRET_KEY;
+  if (!apiKey) throw new Error('Missing STRIPE_SECRET_KEY environment variable');
+  return new Stripe(apiKey, { apiVersion: '2025-07-30.basil' });
+}
 
+/**
+ * Create a checkout session for a team
+ */
 export async function createCheckoutSession({
   team,
   priceId
@@ -18,6 +26,7 @@ export async function createCheckoutSession({
   team: Team | null;
   priceId: string;
 }) {
+  const stripe = getStripe();
   const user = await getUser();
 
   if (!team || !user) {
@@ -26,27 +35,25 @@ export async function createCheckoutSession({
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
-    line_items: [
-      {
-        price: priceId,
-        quantity: 1
-      }
-    ],
+    line_items: [{ price: priceId, quantity: 1 }],
     mode: 'subscription',
     success_url: `${process.env.BASE_URL}/api/stripe/checkout?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.BASE_URL}/pricing`,
     customer: team.stripeCustomerId || undefined,
     client_reference_id: user.id.toString(),
     allow_promotion_codes: true,
-    subscription_data: {
-      trial_period_days: 14
-    }
+    subscription_data: { trial_period_days: 14 }
   });
 
   redirect(session.url!);
 }
 
+/**
+ * Create a Stripe Customer Portal session
+ */
 export async function createCustomerPortalSession(team: Team) {
+  const stripe = getStripe();
+
   if (!team.stripeCustomerId || !team.stripeProductId) {
     redirect('/pricing');
   }
@@ -62,47 +69,29 @@ export async function createCustomerPortalSession(team: Team) {
       throw new Error("Team's product is not active in Stripe");
     }
 
-    const prices = await stripe.prices.list({
-      product: product.id,
-      active: true
-    });
+    const prices = await stripe.prices.list({ product: product.id, active: true });
     if (prices.data.length === 0) {
       throw new Error("No active prices found for the team's product");
     }
 
     configuration = await stripe.billingPortal.configurations.create({
-      business_profile: {
-        headline: 'Manage your subscription'
-      },
+      business_profile: { headline: 'Manage your subscription' },
       features: {
         subscription_update: {
           enabled: true,
           default_allowed_updates: ['price', 'quantity', 'promotion_code'],
           proration_behavior: 'create_prorations',
-          products: [
-            {
-              product: product.id,
-              prices: prices.data.map((price) => price.id)
-            }
-          ]
+          products: [{ product: product.id, prices: prices.data.map(p => p.id) }]
         },
         subscription_cancel: {
           enabled: true,
           mode: 'at_period_end',
           cancellation_reason: {
             enabled: true,
-            options: [
-              'too_expensive',
-              'missing_features',
-              'switched_service',
-              'unused',
-              'other'
-            ]
+            options: ['too_expensive', 'missing_features', 'switched_service', 'unused', 'other']
           }
         },
-        payment_method_update: {
-          enabled: true
-        }
+        payment_method_update: { enabled: true }
       }
     });
   }
@@ -114,9 +103,11 @@ export async function createCustomerPortalSession(team: Team) {
   });
 }
 
-export async function handleSubscriptionChange(
-  subscription: Stripe.Subscription
-) {
+/**
+ * Handle subscription changes from webhooks
+ */
+export async function handleSubscriptionChange(subscription: Stripe.Subscription) {
+  const stripe = getStripe();
   const customerId = subscription.customer as string;
   const subscriptionId = subscription.id;
   const status = subscription.status;
@@ -146,17 +137,20 @@ export async function handleSubscriptionChange(
   }
 }
 
+/**
+ * Get all Stripe recurring prices
+ */
 export async function getStripePrices() {
+  const stripe = getStripe();
   const prices = await stripe.prices.list({
     expand: ['data.product'],
     active: true,
     type: 'recurring'
   });
 
-  return prices.data.map((price) => ({
+  return prices.data.map(price => ({
     id: price.id,
-    productId:
-      typeof price.product === 'string' ? price.product : price.product.id,
+    productId: typeof price.product === 'string' ? price.product : price.product.id,
     unitAmount: price.unit_amount,
     currency: price.currency,
     interval: price.recurring?.interval,
@@ -164,13 +158,14 @@ export async function getStripePrices() {
   }));
 }
 
+/**
+ * Get all Stripe products
+ */
 export async function getStripeProducts() {
-  const products = await stripe.products.list({
-    active: true,
-    expand: ['data.default_price']
-  });
+  const stripe = getStripe();
+  const products = await stripe.products.list({ active: true, expand: ['data.default_price'] });
 
-  return products.data.map((product) => ({
+  return products.data.map(product => ({
     id: product.id,
     name: product.name,
     description: product.description,
