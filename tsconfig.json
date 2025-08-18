@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "types": ["@cloudflare/workers-types"],
     "lib": [
       "dom",
       "dom.iterable",
@@ -35,7 +34,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"
-  ],
+, "env.d.alt"  ],
   "exclude": [
     "node_modules"
   ]

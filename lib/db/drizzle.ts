@@ -1,7 +1,5 @@
-import { drizzle } from 'drizzle-orm/d1';
+// drizzle.ts
+import { drizzle } from "drizzle-orm/d1";
+import * as schema from "@/lib/db/schema";
 
-export interface Env {
-  DB: D1Database;
-}
-
-export const db = (env: Env) => drizzle(env.DB);
+export const db = drizzle(process.env.DB, { schema });

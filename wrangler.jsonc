@@ -24,11 +24,12 @@
     },
   ],
   "d1_databases": [
-    {
+     {
       "binding": "DB",
-      "database_name": "founderfinder",
-      "database_id": "f224c904-145c-4b93-b3dc-aabbbba68149",
+      "database_name": "drizzle-demo-db",
+      "database_id": "3d775841-4cf0-4c57-ae03-d4802871d292",
       "migrations_dir": "./lib/db/migrations",
+
     }
   ],
   "r2_buckets": [
