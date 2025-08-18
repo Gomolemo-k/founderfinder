@@ -66,8 +66,16 @@ function formatAction(action: ActivityType): string {
 }
 
 export default async function ActivityPage() {
-  // Explicitly type logs
-  const logs: ActivityLog[] = await getActivityLogs();
+  // Get raw logs from the database
+  const rawLogs = await getActivityLogs();
+
+  // Map raw logs to typed ActivityLog
+  const logs: ActivityLog[] = rawLogs.map(log => ({
+    ...log,
+    action: log.action as ActivityType,        // cast string to ActivityType
+    timestamp: log.timestamp || new Date(),   // handle null timestamps
+    ipAddress: log.ipAddress || undefined,    // handle null IPs
+  }));
 
   return (
     <section className="flex-1 p-4 lg:p-8">
