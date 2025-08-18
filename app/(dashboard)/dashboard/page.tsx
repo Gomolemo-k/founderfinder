@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Card,
   CardContent,
@@ -25,7 +25,18 @@ type ActionState = {
   success?: string;
 };
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+// Typed fetchers
+const fetchUser = async (url: string): Promise<User> => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Failed to fetch user');
+  return res.json() as Promise<User>;
+};
+
+const fetchTeam = async (url: string): Promise<TeamDataWithMembers> => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Failed to fetch team data');
+  return res.json() as Promise<TeamDataWithMembers>;
+};
 
 function SubscriptionSkeleton() {
   return (
@@ -38,7 +49,7 @@ function SubscriptionSkeleton() {
 }
 
 function ManageSubscription() {
-  const { data: teamData } = useSWR<TeamDataWithMembers>('/api/team', fetcher);
+  const { data: teamData } = useSWR<TeamDataWithMembers>('/api/team', fetchTeam);
 
   return (
     <Card className="mb-8">
@@ -94,7 +105,7 @@ function TeamMembersSkeleton() {
 }
 
 function TeamMembers() {
-  const { data: teamData } = useSWR<TeamDataWithMembers>('/api/team', fetcher);
+  const { data: teamData } = useSWR<TeamDataWithMembers>('/api/team', fetchTeam);
   const [removeState, removeAction, isRemovePending] = useActionState<
     ActionState,
     FormData
@@ -128,15 +139,6 @@ function TeamMembers() {
             <li key={member.id} className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <Avatar>
-                  {/* 
-                    This app doesn't save profile images, but here
-                    is how you'd show them:
-
-                    <AvatarImage
-                      src={member.user.image || ''}
-                      alt={getUserDisplayName(member.user)}
-                    />
-                  */}
                   <AvatarFallback>
                     {getUserDisplayName(member.user)
                       .split(' ')
@@ -145,15 +147,13 @@ function TeamMembers() {
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium">
-                    {getUserDisplayName(member.user)}
-                  </p>
+                  <p className="font-medium">{getUserDisplayName(member.user)}</p>
                   <p className="text-sm text-muted-foreground capitalize">
                     {member.role}
                   </p>
                 </div>
               </div>
-              {index > 1 ? (
+              {index > 1 && (
                 <form action={removeAction}>
                   <input type="hidden" name="memberId" value={member.id} />
                   <Button
@@ -165,13 +165,11 @@ function TeamMembers() {
                     {isRemovePending ? 'Removing...' : 'Remove'}
                   </Button>
                 </form>
-              ) : null}
+              )}
             </li>
           ))}
         </ul>
-        {removeState?.error && (
-          <p className="text-red-500 mt-4">{removeState.error}</p>
-        )}
+        {removeState?.error && <p className="text-red-500 mt-4">{removeState.error}</p>}
       </CardContent>
     </Card>
   );
@@ -188,7 +186,7 @@ function InviteTeamMemberSkeleton() {
 }
 
 function InviteTeamMember() {
-  const { data: user } = useSWR<User>('/api/user', fetcher);
+  const { data: user } = useSWR<User>('/api/user', fetchUser);
   const isOwner = user?.role === 'owner';
   const [inviteState, inviteAction, isInvitePending] = useActionState<
     ActionState,
@@ -233,12 +231,8 @@ function InviteTeamMember() {
               </div>
             </RadioGroup>
           </div>
-          {inviteState?.error && (
-            <p className="text-red-500">{inviteState.error}</p>
-          )}
-          {inviteState?.success && (
-            <p className="text-green-500">{inviteState.success}</p>
-          )}
+          {inviteState?.error && <p className="text-red-500">{inviteState.error}</p>}
+          {inviteState?.success && <p className="text-green-500">{inviteState.success}</p>}
           <Button
             type="submit"
             className="bg-orange-500 hover:bg-orange-600 text-white"

@@ -11,8 +11,6 @@ import { User } from '@/lib/db/schema';
 import useSWR from 'swr';
 import { Suspense } from 'react';
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
-
 type ActionState = {
   name?: string;
   error?: string;
@@ -61,8 +59,16 @@ function AccountForm({
   );
 }
 
+// Typed fetcher for SWR
+const fetcher = async (url: string): Promise<User> => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Failed to fetch user');
+  return res.json() as Promise<User>;
+};
+
 function AccountFormWithData({ state }: { state: ActionState }) {
   const { data: user } = useSWR<User>('/api/user', fetcher);
+
   return (
     <AccountForm
       state={state}
@@ -93,12 +99,10 @@ export default function GeneralPage() {
             <Suspense fallback={<AccountForm state={state} />}>
               <AccountFormWithData state={state} />
             </Suspense>
-            {state.error && (
-              <p className="text-red-500 text-sm">{state.error}</p>
-            )}
-            {state.success && (
-              <p className="text-green-500 text-sm">{state.success}</p>
-            )}
+
+            {state.error && <p className="text-red-500 text-sm">{state.error}</p>}
+            {state.success && <p className="text-green-500 text-sm">{state.success}</p>}
+
             <Button
               type="submit"
               className="bg-orange-500 hover:bg-orange-600 text-white"
