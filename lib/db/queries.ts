@@ -1,12 +1,10 @@
 import { desc, and, eq, isNull } from 'drizzle-orm';
-import { getDb, Env } from './drizzle';
+import { db } from './drizzle';
 import { activityLogs, teamMembers, teams, users } from './schema';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth/session';
 
-export async function getUser(env: Env) {
-  const db = getDb(env);
-
+export async function getUser() {
   const sessionCookie = (await cookies()).get('session');
   if (!sessionCookie || !sessionCookie.value) {
     return null;
@@ -31,12 +29,14 @@ export async function getUser(env: Env) {
     .where(and(eq(users.id, sessionData.user.id), isNull(users.deletedAt)))
     .limit(1);
 
-  return user.length > 0 ? user[0] : null;
+  if (user.length === 0) {
+    return null;
+  }
+
+  return user[0];
 }
 
-export async function getTeamByStripeCustomerId(env: Env, customerId: string) {
-  const db = getDb(env);
-
+export async function getTeamByStripeCustomerId(customerId: string) {
   const result = await db
     .select()
     .from(teams)
@@ -47,7 +47,6 @@ export async function getTeamByStripeCustomerId(env: Env, customerId: string) {
 }
 
 export async function updateTeamSubscription(
-  env: Env,
   teamId: number,
   subscriptionData: {
     stripeSubscriptionId: string | null;
@@ -56,8 +55,6 @@ export async function updateTeamSubscription(
     subscriptionStatus: string;
   }
 ) {
-  const db = getDb(env);
-
   await db
     .update(teams)
     .set({
@@ -67,9 +64,7 @@ export async function updateTeamSubscription(
     .where(eq(teams.id, teamId));
 }
 
-export async function getUserWithTeam(env: Env, userId: number) {
-  const db = getDb(env);
-
+export async function getUserWithTeam(userId: number) {
   const result = await db
     .select({
       user: users,
@@ -83,22 +78,20 @@ export async function getUserWithTeam(env: Env, userId: number) {
   return result[0];
 }
 
-export async function getActivityLogs(env: Env) {
-  const db = getDb(env);
-  const user = await getUser(env);
-
+export async function getActivityLogs() {
+  const user = await getUser();
   if (!user) {
     throw new Error('User not authenticated');
   }
 
   return await db
-    .select(
-      activityLogs.id,
-      activityLogs.action,
-      activityLogs.timestamp,
-      activityLogs.ipAddress,
-      users.name.as('userName')
-    )
+    .select({
+      id: activityLogs.id,
+      action: activityLogs.action,
+      timestamp: activityLogs.timestamp,
+      ipAddress: activityLogs.ipAddress,
+      userName: users.name
+    })
     .from(activityLogs)
     .leftJoin(users, eq(activityLogs.userId, users.id))
     .where(eq(activityLogs.userId, user.id))
@@ -106,10 +99,8 @@ export async function getActivityLogs(env: Env) {
     .limit(10);
 }
 
-export async function getTeamForUser(env: Env) {
-  const db = getDb(env);
-  const user = await getUser(env);
-
+export async function getTeamForUser() {
+  const user = await getUser();
   if (!user) {
     return null;
   }
