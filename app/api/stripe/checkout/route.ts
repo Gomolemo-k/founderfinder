@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/payments/stripe';
 import Stripe from 'stripe';
 import { drizzle } from 'drizzle-orm/d1';
+import { db } from '@/lib/db/drizzle';
 
 interface Env {
   DB: any; // Replace 'any' with the actual type of your DB binding if known
@@ -12,7 +13,6 @@ interface Env {
 
 export async function GET(request: NextRequest, env: Env) {
   // Initialize D1 database from Wrangler binding
-  const db = drizzle(env.DB);
 
   const searchParams = request.nextUrl.searchParams;
   const sessionId = searchParams.get('session_id');
