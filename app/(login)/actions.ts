@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { and, eq, sql } from 'drizzle-orm';
-import { db } from '@/lib/db/drizzle';
+import { drizzle } from 'drizzle-orm/d1';
 import {
   User,
   users,
@@ -51,7 +51,7 @@ const signInSchema = z.object({
 
 export const signIn = validatedAction(signInSchema, async (data, formData) => {
   const { email, password } = data;
-
+  
   const userWithTeam = await db
     .select({
       user: users,
