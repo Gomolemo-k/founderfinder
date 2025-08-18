@@ -14,6 +14,15 @@ import {
 import { ActivityType } from '@/lib/db/schema';
 import { getActivityLogs } from '@/lib/db/queries';
 
+// Define the structure of an activity log
+export interface ActivityLog {
+  id: number;
+  action: ActivityType;
+  ipAddress?: string;
+  timestamp: string | Date;
+}
+
+// Map ActivityType to icons
 const iconMap: Record<ActivityType, LucideIcon> = {
   [ActivityType.SIGN_UP]: UserPlus,
   [ActivityType.SIGN_IN]: UserCog,
@@ -27,49 +36,38 @@ const iconMap: Record<ActivityType, LucideIcon> = {
   [ActivityType.ACCEPT_INVITATION]: CheckCircle,
 };
 
+// Helper to format timestamps
 function getRelativeTime(date: Date) {
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
   if (diffInSeconds < 60) return 'just now';
-  if (diffInSeconds < 3600)
-    return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-  if (diffInSeconds < 86400)
-    return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-  if (diffInSeconds < 604800)
-    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
   return date.toLocaleDateString();
 }
 
+// Helper to format action descriptions
 function formatAction(action: ActivityType): string {
   switch (action) {
-    case ActivityType.SIGN_UP:
-      return 'You signed up';
-    case ActivityType.SIGN_IN:
-      return 'You signed in';
-    case ActivityType.SIGN_OUT:
-      return 'You signed out';
-    case ActivityType.UPDATE_PASSWORD:
-      return 'You changed your password';
-    case ActivityType.DELETE_ACCOUNT:
-      return 'You deleted your account';
-    case ActivityType.UPDATE_ACCOUNT:
-      return 'You updated your account';
-    case ActivityType.CREATE_TEAM:
-      return 'You created a new team';
-    case ActivityType.REMOVE_TEAM_MEMBER:
-      return 'You removed a team member';
-    case ActivityType.INVITE_TEAM_MEMBER:
-      return 'You invited a team member';
-    case ActivityType.ACCEPT_INVITATION:
-      return 'You accepted an invitation';
-    default:
-      return 'Unknown action occurred';
+    case ActivityType.SIGN_UP: return 'You signed up';
+    case ActivityType.SIGN_IN: return 'You signed in';
+    case ActivityType.SIGN_OUT: return 'You signed out';
+    case ActivityType.UPDATE_PASSWORD: return 'You changed your password';
+    case ActivityType.DELETE_ACCOUNT: return 'You deleted your account';
+    case ActivityType.UPDATE_ACCOUNT: return 'You updated your account';
+    case ActivityType.CREATE_TEAM: return 'You created a new team';
+    case ActivityType.REMOVE_TEAM_MEMBER: return 'You removed a team member';
+    case ActivityType.INVITE_TEAM_MEMBER: return 'You invited a team member';
+    case ActivityType.ACCEPT_INVITATION: return 'You accepted an invitation';
+    default: return 'Unknown action occurred';
   }
 }
 
 export default async function ActivityPage() {
-  const logs = await getActivityLogs();
+  // Explicitly type logs
+  const logs: ActivityLog[] = await getActivityLogs();
 
   return (
     <section className="flex-1 p-4 lg:p-8">
@@ -83,11 +81,9 @@ export default async function ActivityPage() {
         <CardContent>
           {logs.length > 0 ? (
             <ul className="space-y-4">
-              {logs.map((log) => {
-                const Icon = iconMap[log.action as ActivityType] || Settings;
-                const formattedAction = formatAction(
-                  log.action as ActivityType
-                );
+              {logs.map((log: ActivityLog) => {
+                const Icon = iconMap[log.action] || Settings;
+                const formattedAction = formatAction(log.action);
 
                 return (
                   <li key={log.id} className="flex items-center space-x-4">
@@ -114,8 +110,7 @@ export default async function ActivityPage() {
                 No activity yet
               </h3>
               <p className="text-sm text-gray-500 max-w-sm">
-                When you perform actions like signing in or updating your
-                account, they'll appear here.
+                When you perform actions like signing in or updating your account, they'll appear here.
               </p>
             </div>
           )}
