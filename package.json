@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@cloudflare/next-on-pages": "^1.13.13",
-    "@opennextjs/cloudflare": "https://pkg.pr.new/@opennextjs/cloudflare@main",
+    "@opennextjs/cloudflare": "^1.6.5",
     "@tailwindcss/postcss": "4.1.7",
     "@types/node": "^22.15.18",
     "@types/react": "19.1.4",
