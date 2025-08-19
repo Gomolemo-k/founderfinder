@@ -34,7 +34,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"
-, "env.d.alt"  ],
+, "env.d.alt", "next.config.js"  ],
   "exclude": [
     "node_modules"
   ]
