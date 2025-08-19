@@ -49,11 +49,6 @@
     "ws": "^8.15.0",
     "@ampproject/toolbox-optimizer": "^2.0.0"
   },
-  "resolutions": {
-    "next/dist/compiled/node-fetch": "node-fetch",
-    "next/dist/compiled/ws": "ws",
-    "next/dist/compiled/@ampproject/toolbox-optimizer": "@ampproject/toolbox-optimizer"
-  },
   "sideEffects": [
     "**/*.css"
   ],
