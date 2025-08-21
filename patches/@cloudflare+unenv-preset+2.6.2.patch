@@ -1,5 +1,5 @@
 diff --git a/node_modules/@cloudflare/unenv-preset/dist/runtime/node/module.mjs b/node_modules/@cloudflare/unenv-preset/dist/runtime/node/module.mjs
-index c54d05e..cda332a 100644
+index c54d05e..fixed000 100644
 --- a/node_modules/@cloudflare/unenv-preset/dist/runtime/node/module.mjs
 +++ b/node_modules/@cloudflare/unenv-preset/dist/runtime/node/module.mjs
 @@ -25,6 +25,7 @@ import {
@@ -15,26 +15,32 @@ index c54d05e..cda332a 100644
    wrap
  } from "unenv/node/module";
 +
-+// Fix for Cloudflare deployment: ensure 'file' is never undefined
++// Cloudflare Workers fix: ensure createRequire always gets a valid file path
  const workerdModule = process.getBuiltinModule("node:module");
- export const createRequire = (file) => {
+-export const createRequire = (file) => {
 -  return Object.assign(workerdModule.createRequire(file), {
-+  const path = file ?? new URL(import.meta.url);
+-    resolve: Object.assign(
+-      notImplemented("module.require.resolve"),
+-      {
+-        paths: notImplemented("module.require.resolve.paths")
+-      }
+-    ),
+-    cache: Object.create(null),
+-    extensions: _extensions,
+-    main: undefined
+-  });
++export const createRequire = (file) => {
++  // Use import.meta.url if file is undefined
++  const path = file ?? import.meta.url;
 +  return Object.assign(workerdModule.createRequire(path), {
-     resolve: Object.assign(
--      /* @__PURE__ */ notImplemented("module.require.resolve"),
++    resolve: Object.assign(
 +      notImplemented("module.require.resolve"),
-       {
--        paths: /* @__PURE__ */ notImplemented("module.require.resolve.paths")
-+        paths: notImplemented("module.require.resolve.paths")
-       }
-     ),
--    cache: /* @__PURE__ */ Object.create(null),
++      { paths: notImplemented("module.require.resolve.paths") }
++    ),
 +    cache: Object.create(null),
-     extensions: _extensions,
--    main: void 0
++    extensions: _extensions,
 +    main: undefined
-   });
++  });
  };
 +
  export default {
