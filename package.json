@@ -17,7 +17,6 @@
   "dependencies": {
     "@ampproject/toolbox-optimizer": "^2.10.1",
     "@cloudflare/workers-shared": "^0.17.5",
-    "@cloudflare/next-on-pages": "^1.13.13",
     "@cloudflare/workers-types": "^4.20250821.0",
     "@opennextjs/cloudflare": "^1.6.5",
     "@opentelemetry/api": "^1.9.0",
