@@ -1,74 +1,58 @@
+// node_modules/next/dist/server/lib/trace/tracer.js
+
 Object.defineProperty(exports, "__esModule", { value: true });
+
 function _export(target, all) {
-    for (var name in all) Object.defineProperty(target, name, {
-        enumerable: true,
-        get: all[name]
-    });
+  for (var name in all) Object.defineProperty(target, name, {
+    enumerable: true,
+    get: all[name]
+  });
 }
 
 _export(exports, {
-    BubbledError: () => BubbledError,
-    isBubbledError: () => isBubbledError,
-    getTracer: () => getTracer
+  BubbledError: () => BubbledError,
+  isBubbledError: () => isBubbledError,
+  getTracer: () => getTracer
 });
 
-const _constants = require("./constants");
-const _isthenable = require("../../../shared/lib/is-thenable");
-
-let api;
-
-// --- Worker-safe OpenTelemetry handling ---
-if (process.env.NEXT_RUNTIME === 'edge') {
-    // Cloudflare Worker / Edge: use no-op stub
-    api = {
-        context: {
-            active: () => ({}),
-            with: (_, fn) => fn(),
-            bind: (_, fn) => fn
-        },
-        propagation: {
-            inject: () => {},
-            extract: () => ({})
-        },
-        trace: {
-            getTracer: () => ({ startSpan: () => ({ end: () => {} }) }),
-            getSpan: () => null,
-            getSpanContext: () => null,
-            setSpan: () => ({})
-        },
-        SpanStatusCode: { ERROR: 'ERROR' },
-        SpanKind: { INTERNAL: 'INTERNAL' },
-        ROOT_CONTEXT: {},
-        createContextKey: () => Symbol('noop-key')
-    };
-} else {
-    // Node.js server: normal OpenTelemetry
-    api = require('@opentelemetry/api');
-}
-// -------------------------------------------------------
+// No OpenTelemetry at all
+const api = {
+  context: { active: () => ({}), with: (_, fn) => fn(), bind: (_, fn) => fn },
+  propagation: { inject: () => {}, extract: () => ({}) },
+  trace: {
+    getTracer: () => ({ startSpan: () => ({ end: () => {} }) }),
+    getSpan: () => null,
+    getSpanContext: () => null,
+    setSpan: () => ({})
+  },
+  SpanStatusCode: { ERROR: 'ERROR' },
+  SpanKind: { INTERNAL: 'INTERNAL' },
+  ROOT_CONTEXT: {},
+  createContextKey: () => Symbol('noop-key')
+};
 
 const { context, propagation, trace, SpanStatusCode, SpanKind, ROOT_CONTEXT, createContextKey } = api;
 
 class BubbledError extends Error {
-    constructor(bubble, result) {
-        super();
-        this.bubble = bubble;
-        this.result = result;
-    }
+  constructor(bubble, result) {
+    super();
+    this.bubble = bubble;
+    this.result = result;
+  }
 }
 
 function isBubbledError(error) {
-    if (typeof error !== 'object' || error === null) return false;
-    return error instanceof BubbledError;
+  if (typeof error !== 'object' || error === null) return false;
+  return error instanceof BubbledError;
 }
 
 const closeSpanWithError = (span, error) => {
-    if (isBubbledError(error) && error.bubble) {
-        span.setAttribute('next.bubble', true);
-    } else {
-        span.setStatus({ code: SpanStatusCode.ERROR, message: error?.message });
-    }
-    span.end();
+  if (isBubbledError(error) && error.bubble) {
+    span.setAttribute?.('next.bubble', true);
+  } else {
+    span.setStatus?.({ code: SpanStatusCode.ERROR, message: error?.message });
+  }
+  span.end?.();
 };
 
 const rootSpanAttributesStore = new Map();
@@ -76,152 +60,45 @@ const rootSpanIdKey = createContextKey('next.rootSpanId');
 let lastSpanId = 0;
 const getSpanId = () => lastSpanId++;
 
-const clientTraceDataSetter = {
-    set(carrier, key, value) {
-        carrier.push({ key, value });
-    }
-};
-
 class NextTracerImpl {
-    getTracerInstance() {
-        return trace.getTracer('next.js', '0.0.1');
-    }
+  getTracerInstance() {
+    return trace.getTracer('next.js', '0.0.1');
+  }
 
-    getContext() {
-        return context;
-    }
+  getContext() {
+    return context;
+  }
 
-    getActiveScopeSpan() {
-        const activeContext = context.active();
-        return trace.getSpan(activeContext);
-    }
+  getActiveScopeSpan() {
+    const activeContext = context.active();
+    return trace.getSpan(activeContext);
+  }
 
-    withPropagatedContext(carrier, fn, getter) {
-        const activeContext = context.active();
-        if (trace.getSpanContext(activeContext)) {
-            return fn();
-        }
-        const remoteContext = propagation.extract(activeContext, carrier, getter);
-        return context.with(remoteContext, fn);
-    }
+  withPropagatedContext(carrier, fn, getter) {
+    const activeContext = context.active();
+    if (trace.getSpanContext(activeContext)) return fn();
+    const remoteContext = propagation.extract(activeContext, carrier, getter);
+    return context.with(remoteContext, fn);
+  }
 
-    trace(...args) {
-        const [type, fnOrOptions, fnOrEmpty] = args;
-        const { fn, options } = typeof fnOrOptions === 'function'
-            ? { fn: fnOrOptions, options: {} }
-            : { fn: fnOrEmpty, options: { ...fnOrOptions } };
+  trace(type, fnOrOptions, fnOrEmpty) {
+    const { fn, options } = typeof fnOrOptions === 'function'
+      ? { fn: fnOrOptions, options: {} }
+      : { fn: fnOrEmpty, options: { ...fnOrOptions } };
 
-        const spanName = options.spanName ?? type;
+    return fn();
+  }
 
-        if (!_constants.NextVanillaSpanAllowlist.includes(type) &&
-            process.env.NEXT_OTEL_VERBOSE !== '1' ||
-            options.hideSpan) {
-            return fn();
-        }
+  wrap(name, options = {}, fn) {
+    return fn;
+  }
 
-        let spanContext = this.getSpanContext((options?.parentSpan) ?? this.getActiveScopeSpan());
-        let isRootSpan = false;
-
-        if (!spanContext) {
-            spanContext = context.active() ?? ROOT_CONTEXT;
-            isRootSpan = true;
-        } else if (trace.getSpanContext(spanContext)?.isRemote) {
-            isRootSpan = true;
-        }
-
-        const spanId = getSpanId();
-        options.attributes = {
-            'next.span_name': spanName,
-            'next.span_type': type,
-            ...options.attributes
-        };
-
-        return context.with(
-            spanContext.setValue(rootSpanIdKey, spanId),
-            () => this.getTracerInstance().startActiveSpan(spanName, options, (span) => {
-                const startTime = ('performance' in globalThis && 'measure' in performance)
-                    ? performance.now()
-                    : undefined;
-
-                const onCleanup = () => {
-                    rootSpanAttributesStore.delete(spanId);
-                    if (startTime &&
-                        process.env.NEXT_OTEL_PERFORMANCE_PREFIX &&
-                        _constants.LogSpanAllowList.includes(type || '')) {
-                        performance.measure(
-                            `${process.env.NEXT_OTEL_PERFORMANCE_PREFIX}:next-${(type.split('.').pop() || '').replace(/[A-Z]/g, (m) => '-' + m.toLowerCase())}`,
-                            { start: startTime, end: performance.now() }
-                        );
-                    }
-                };
-
-                if (isRootSpan) {
-                    rootSpanAttributesStore.set(spanId, new Map(Object.entries(options.attributes ?? {})));
-                }
-
-                try {
-                    if (fn.length > 1) {
-                        return fn(span, (err) => closeSpanWithError(span, err));
-                    }
-                    const result = fn(span);
-                    if (_isthenable.isThenable(result)) {
-                        return result
-                            .then(res => { span.end(); return res; })
-                            .catch(err => { closeSpanWithError(span, err); throw err; })
-                            .finally(onCleanup);
-                    } else {
-                        span.end();
-                        onCleanup();
-                        return result;
-                    }
-                } catch (err) {
-                    onCleanup();
-                    throw err;
-                }
-            })
-        );
-    }
-
-    wrap(...args) {
-        const tracer = this;
-        const [name, options, fn] = args.length === 3 ? args : [args[0], {}, args[1]];
-
-        if (!_constants.NextVanillaSpanAllowlist.includes(name) && process.env.NEXT_OTEL_VERBOSE !== '1') {
-            return fn;
-        }
-
-        return function () {
-            let optionsObj = options;
-            if (typeof optionsObj === 'function' && typeof fn === 'function') {
-                optionsObj = optionsObj.apply(this, arguments);
-            }
-
-            const lastArgId = arguments.length - 1;
-            const cb = arguments[lastArgId];
-
-            if (typeof cb === 'function') {
-                const scopeBoundCb = tracer.getContext().bind(context.active(), cb);
-                return tracer.trace(name, optionsObj, (_span, done) => {
-                    arguments[lastArgId] = function (err) {
-                        done?.(err);
-                        return scopeBoundCb.apply(this, arguments);
-                    };
-                    return fn.apply(this, arguments);
-                });
-            } else {
-                return tracer.trace(name, optionsObj, () => fn.apply(this, arguments));
-            }
-        };
-    }
-
-    getSpanContext(span) {
-        return span ?? this.getActiveScopeSpan();
-    }
+  getSpanContext(span) {
+    return span ?? this.getActiveScopeSpan();
+  }
 }
 
 const getTracer = (() => {
-    const tracer = new NextTracerImpl();
-    return () => tracer;
+  const tracer = new NextTracerImpl();
+  return () => tracer;
 })();
-
-//# sourceMappingURL=tracer.js.map
