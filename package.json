@@ -16,9 +16,10 @@
   },
   "dependencies": {
     "@ampproject/toolbox-optimizer": "^2.10.1",
-    "@cloudflare/workers-types": "^4.20250821.0",
     "@cloudflare/workers-shared": "^0.17.5",
+    "@cloudflare/workers-types": "^4.20250821.0",
     "@opennextjs/cloudflare": "^1.6.5",
+    "@opentelemetry/api": "^1.9.0",
     "@tailwindcss/postcss": "4.1.12",
     "@types/node": "^24.3.0",
     "@types/react": "19.1.10",
@@ -54,7 +55,6 @@
     "**/*.css"
   ],
   "devDependencies": {
-    
     "drizzle-kit": "^0.31.4"
   }
 }
