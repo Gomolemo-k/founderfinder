@@ -1,5 +1,5 @@
 diff --git a/node_modules/@cloudflare/unenv-preset/dist/runtime/node/module.mjs b/node_modules/@cloudflare/unenv-preset/dist/runtime/node/module.mjs
-index c54d05e..e532127 100644
+index c54d05e..b4b1b6d 100644
 --- a/node_modules/@cloudflare/unenv-preset/dist/runtime/node/module.mjs
 +++ b/node_modules/@cloudflare/unenv-preset/dist/runtime/node/module.mjs
 @@ -25,6 +25,7 @@ import {
@@ -19,8 +19,8 @@ index c54d05e..e532127 100644
  const workerdModule = process.getBuiltinModule("node:module");
  export const createRequire = (file) => {
 -  return Object.assign(workerdModule.createRequire(file), {
-+  // Use import.meta.url as fallback if file is undefined
-+  const path = file ?? new URL(import.meta.url).toString();
++  // Use a dummy path if file is undefined — safe for Workers
++  const path = file || "/fake/path/module.js";
 +  return Object.assign(workerdModule.createRequire(path), {
      resolve: Object.assign(
 -      /* @__PURE__ */ notImplemented("module.require.resolve"),
