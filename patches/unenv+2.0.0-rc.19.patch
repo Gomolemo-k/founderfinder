@@ -1,0 +1,78 @@
+diff --git a/node_modules/unenv/dist/runtime/node/module.mjs b/node_modules/unenv/dist/runtime/node/module.mjs
+index e56a307..3d4426b 100644
+--- a/node_modules/unenv/dist/runtime/node/module.mjs
++++ b/node_modules/unenv/dist/runtime/node/module.mjs
+@@ -5,14 +5,42 @@ export const _extensions = {
+ 	".json": /* @__PURE__ */ notImplemented("module.require.extensions['.json']"),
+ 	".node": /* @__PURE__ */ notImplemented("module.require.extensions['.node']")
+ };
+-export const createRequire = function(_filename) {
+-	return Object.assign(/* @__PURE__ */ notImplemented("module.require"), {
+-		resolve: Object.assign(/* @__PURE__ */ notImplemented("module.require.resolve"), { paths: /* @__PURE__ */ notImplemented("module.require.resolve.paths") }),
+-		cache: Object.create(null),
+-		extensions: _extensions,
+-		main: undefined
+-	});
++
++// ✅ Fixed createRequire implementation
++export const createRequire = function (filename) {
++  try {
++    // Try native createRequire if available (Node, Bun, or workerd polyfill)
++    const workerdModule = process.getBuiltinModule?.("node:module");
++    if (workerdModule?.createRequire) {
++      return Object.assign(workerdModule.createRequire(filename), {
++        cache: Object.create(null),
++        extensions: _extensions,
++        main: undefined
++      });
++    }
++  } catch {
++    // ignore and fall through
++  }
++
++  // Fallback: throw clearly in environments where require isn’t usable
++  const fakeRequire = () => {
++    throw new Error("Dynamic require is not supported in this runtime");
++  };
++
++  return Object.assign(fakeRequire, {
++    resolve: Object.assign(() => {
++      throw new Error("require.resolve is not supported in this runtime");
++    }, {
++      paths: () => {
++        throw new Error("require.resolve.paths is not supported in this runtime");
++      }
++    }),
++    cache: Object.create(null),
++    extensions: _extensions,
++    main: undefined
++  });
+ };
++
+ export const getCompileCacheDir = function() {
+ 	return undefined;
+ };
+@@ -134,23 +162,6 @@ export const getSourceMapsSupport = /* @__PURE__ */ notImplemented("module.getSo
+ export const setSourceMapsSupport = /* @__PURE__ */ notImplemented("module.setSourceMapsSupport");
+ export const _pathCache = Object.create(null);
+ export const globalPaths = ["node_modules"];
+-// export class _Module implements NodeJS.Module {
+-//   require: NodeJS.Require;
+-//   id: string;
+-//   filename: string;
+-//   exports = Object.create(null);
+-//   parent = undefined;
+-//   loaded = true;
+-//   children = [];
+-//   isPreloading: boolean = false;
+-//   path: string = "/";
+-//   paths: string[] = [];
+-//   constructor(id = "index.js") {
+-//     this.id = id;
+-//     this.filename = id;
+-//     this.require = createRequire(id);
+-//   }
+-// }
+ export const Module = {
+ 	get Module() {
+ 		return Module;

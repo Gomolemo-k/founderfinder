@@ -1,104 +1,295 @@
-// node_modules/next/dist/server/lib/trace/tracer.js
-
-Object.defineProperty(exports, "__esModule", { value: true });
-
-function _export(target, all) {
-  for (var name in all) Object.defineProperty(target, name, {
-    enumerable: true,
-    get: all[name]
-  });
-}
-
-_export(exports, {
-  BubbledError: () => BubbledError,
-  isBubbledError: () => isBubbledError,
-  getTracer: () => getTracer
-});
-
-// No OpenTelemetry at all
-const api = {
-  context: { active: () => ({}), with: (_, fn) => fn(), bind: (_, fn) => fn },
-  propagation: { inject: () => {}, extract: () => ({}) },
-  trace: {
-    getTracer: () => ({ startSpan: () => ({ end: () => {} }) }),
-    getSpan: () => null,
-    getSpanContext: () => null,
-    setSpan: () => ({})
-  },
-  SpanStatusCode: { ERROR: 'ERROR' },
-  SpanKind: { INTERNAL: 'INTERNAL' },
-  ROOT_CONTEXT: {},
-  createContextKey: () => Symbol('noop-key')
-};
-
-const { context, propagation, trace, SpanStatusCode, SpanKind, ROOT_CONTEXT, createContextKey } = api;
-
-class BubbledError extends Error {
-  constructor(bubble, result) {
-    super();
-    this.bubble = bubble;
-    this.result = result;
-  }
-}
-
-function isBubbledError(error) {
-  if (typeof error !== 'object' || error === null) return false;
-  return error instanceof BubbledError;
-}
-
-const closeSpanWithError = (span, error) => {
-  if (isBubbledError(error) && error.bubble) {
-    span.setAttribute?.('next.bubble', true);
-  } else {
-    span.setStatus?.({ code: SpanStatusCode.ERROR, message: error?.message });
-  }
-  span.end?.();
-};
-
-const rootSpanAttributesStore = new Map();
-const rootSpanIdKey = createContextKey('next.rootSpanId');
-let lastSpanId = 0;
-const getSpanId = () => lastSpanId++;
-
-class NextTracerImpl {
-  getTracerInstance() {
-    return trace.getTracer('next.js', '0.0.1');
-  }
-
-  getContext() {
-    return context;
-  }
-
-  getActiveScopeSpan() {
-    const activeContext = context.active();
-    return trace.getSpan(activeContext);
-  }
-
-  withPropagatedContext(carrier, fn, getter) {
-    const activeContext = context.active();
-    if (trace.getSpanContext(activeContext)) return fn();
-    const remoteContext = propagation.extract(activeContext, carrier, getter);
-    return context.with(remoteContext, fn);
-  }
-
-  trace(type, fnOrOptions, fnOrEmpty) {
-    const { fn, options } = typeof fnOrOptions === 'function'
-      ? { fn: fnOrOptions, options: {} }
-      : { fn: fnOrEmpty, options: { ...fnOrOptions } };
-
-    return fn();
-  }
-
-  wrap(name, options = {}, fn) {
-    return fn;
-  }
-
-  getSpanContext(span) {
-    return span ?? this.getActiveScopeSpan();
-  }
-}
-
-const getTracer = (() => {
-  const tracer = new NextTracerImpl();
-  return () => tracer;
-})();
+diff --git a/node_modules/next/dist/server/lib/trace/tracer.js b/node_modules/next/dist/server/lib/trace/tracer.js
+index 6139abe..390c504 100644
+--- a/node_modules/next/dist/server/lib/trace/tracer.js
++++ b/node_modules/next/dist/server/lib/trace/tracer.js
+@@ -10,7 +10,7 @@ Object.defineProperty(exports, "__esModule", {
+     isBubbledError: null
+ });
+ function _export(target, all) {
+-    for(var name in all)Object.defineProperty(target, name, {
++    for (var name in all) Object.defineProperty(target, name, {
+         enumerable: true,
+         get: all[name]
+     });
+@@ -32,36 +32,62 @@ _export(exports, {
+         return isBubbledError;
+     }
+ });
++
+ const _constants = require("./constants");
+ const _isthenable = require("../../../shared/lib/is-thenable");
++
+ let api;
+-// we want to allow users to use their own version of @opentelemetry/api if they
+-// want to, so we try to require it first, and if it fails we fall back to the
+-// version that is bundled with Next.js
+-// this is because @opentelemetry/api has to be synced with the version of
+-// @opentelemetry/tracing that is used, and we don't want to force users to use
+-// the version that is bundled with Next.js.
+-// the API is ~stable, so this should be fine
+-if (process.env.NEXT_RUNTIME === 'edge') {
++
++// --- Modified block (safe requires + fallback stub) ---
++try {
++    // Try to load OpenTelemetry API if available
+     api = require('@opentelemetry/api');
+-} else {
++} catch (err) {
+     try {
+-        api = require('@opentelemetry/api');
+-    } catch (err) {
++        // Fallback: try Next.js’s bundled OpenTelemetry
+         api = require('next/dist/compiled/@opentelemetry/api');
++    } catch (err2) {
++        // Final fallback: disable tracing completely
++        api = {
++            context: {
++                active: () => ({}),
++                with: (_, fn) => fn(),
++                bind: (_, fn) => fn
++            },
++            propagation: {
++                inject: () => {},
++                extract: () => ({})
++            },
++            trace: {
++                getTracer: () => ({ startSpan: () => ({ end: () => {} }) }),
++                getSpan: () => null,
++                getSpanContext: () => null,
++                setSpan: () => ({})
++            },
++            SpanStatusCode: { ERROR: 'ERROR' },
++            SpanKind: { INTERNAL: 'INTERNAL' },
++            ROOT_CONTEXT: {}
++        };
+     }
+ }
++// -------------------------------------------------------
++
+ const { context, propagation, trace, SpanStatusCode, SpanKind, ROOT_CONTEXT } = api;
++
+ class BubbledError extends Error {
+-    constructor(bubble, result){
+-        super(), this.bubble = bubble, this.result = result;
++    constructor(bubble, result) {
++        super();
++        this.bubble = bubble;
++        this.result = result;
+     }
+ }
++
+ function isBubbledError(error) {
+     if (typeof error !== 'object' || error === null) return false;
+     return error instanceof BubbledError;
+ }
+-const closeSpanWithError = (span, error)=>{
++
++const closeSpanWithError = (span, error) => {
+     if (isBubbledError(error) && error.bubble) {
+         span.setAttribute('next.bubble', true);
+     } else {
+@@ -76,24 +102,21 @@ const closeSpanWithError = (span, error)=>{
+     }
+     span.end();
+ };
+-/** we use this map to propagate attributes from nested spans to the top span */ const rootSpanAttributesStore = new Map();
++
++/** we use this map to propagate attributes from nested spans to the top span */
++const rootSpanAttributesStore = new Map();
+ const rootSpanIdKey = api.createContextKey('next.rootSpanId');
+ let lastSpanId = 0;
+-const getSpanId = ()=>lastSpanId++;
++const getSpanId = () => lastSpanId++;
++
+ const clientTraceDataSetter = {
+-    set (carrier, key, value) {
+-        carrier.push({
+-            key,
+-            value
+-        });
++    set(carrier, key, value) {
++        carrier.push({ key, value });
+     }
+ };
++
+ class NextTracerImpl {
+-    /**
+-   * Returns an instance to the trace with configured name.
+-   * Since wrap / trace can be defined in any place prior to actual trace subscriber initialization,
+-   * This should be lazily evaluated.
+-   */ getTracerInstance() {
++    getTracerInstance() {
+         return trace.getTracer('next.js', '0.0.1');
+     }
+     getContext() {
+@@ -111,7 +134,6 @@ class NextTracerImpl {
+     withPropagatedContext(carrier, fn, getter) {
+         const activeContext = context.active();
+         if (trace.getSpanContext(activeContext)) {
+-            // Active span is already set, too late to propagate.
+             return fn();
+         }
+         const remoteContext = propagation.extract(activeContext, carrier, getter);
+@@ -120,65 +142,74 @@ class NextTracerImpl {
+     trace(...args) {
+         var _trace_getSpanContext;
+         const [type, fnOrOptions, fnOrEmpty] = args;
+-        // coerce options form overload
+-        const { fn, options } = typeof fnOrOptions === 'function' ? {
+-            fn: fnOrOptions,
+-            options: {}
+-        } : {
+-            fn: fnOrEmpty,
+-            options: {
+-                ...fnOrOptions
+-            }
+-        };
++        const { fn, options } = typeof fnOrOptions === 'function'
++            ? { fn: fnOrOptions, options: {} }
++            : { fn: fnOrEmpty, options: { ...fnOrOptions } };
+         const spanName = options.spanName ?? type;
+-        if (!_constants.NextVanillaSpanAllowlist.includes(type) && process.env.NEXT_OTEL_VERBOSE !== '1' || options.hideSpan) {
++
++        if (!_constants.NextVanillaSpanAllowlist.includes(type) &&
++            process.env.NEXT_OTEL_VERBOSE !== '1' ||
++            options.hideSpan) {
+             return fn();
+         }
+-        // Trying to get active scoped span to assign parent. If option specifies parent span manually, will try to use it.
++
+         let spanContext = this.getSpanContext((options == null ? void 0 : options.parentSpan) ?? this.getActiveScopeSpan());
+         let isRootSpan = false;
++
+         if (!spanContext) {
+             spanContext = (context == null ? void 0 : context.active()) ?? ROOT_CONTEXT;
+             isRootSpan = true;
+         } else if ((_trace_getSpanContext = trace.getSpanContext(spanContext)) == null ? void 0 : _trace_getSpanContext.isRemote) {
+             isRootSpan = true;
+         }
++
+         const spanId = getSpanId();
+         options.attributes = {
+             'next.span_name': spanName,
+             'next.span_type': type,
+             ...options.attributes
+         };
+-        return context.with(spanContext.setValue(rootSpanIdKey, spanId), ()=>this.getTracerInstance().startActiveSpan(spanName, options, (span)=>{
+-                const startTime = 'performance' in globalThis && 'measure' in performance ? globalThis.performance.now() : undefined;
+-                const onCleanup = ()=>{
++
++        return context.with(
++            spanContext.setValue(rootSpanIdKey, spanId),
++            () => this.getTracerInstance().startActiveSpan(spanName, options, (span) => {
++                const startTime = 'performance' in globalThis && 'measure' in performance
++                    ? globalThis.performance.now()
++                    : undefined;
++                const onCleanup = () => {
+                     rootSpanAttributesStore.delete(spanId);
+-                    if (startTime && process.env.NEXT_OTEL_PERFORMANCE_PREFIX && _constants.LogSpanAllowList.includes(type || '')) {
+-                        performance.measure(`${process.env.NEXT_OTEL_PERFORMANCE_PREFIX}:next-${(type.split('.').pop() || '').replace(/[A-Z]/g, (match)=>'-' + match.toLowerCase())}`, {
+-                            start: startTime,
+-                            end: performance.now()
+-                        });
++                    if (
++                        startTime &&
++                        process.env.NEXT_OTEL_PERFORMANCE_PREFIX &&
++                        _constants.LogSpanAllowList.includes(type || '')
++                    ) {
++                        performance.measure(
++                            `${process.env.NEXT_OTEL_PERFORMANCE_PREFIX}:next-${(type.split('.').pop() || '').replace(/[A-Z]/g, (match) => '-' + match.toLowerCase())}`,
++                            { start: startTime, end: performance.now() }
++                        );
+                     }
+                 };
++
+                 if (isRootSpan) {
+                     rootSpanAttributesStore.set(spanId, new Map(Object.entries(options.attributes ?? {})));
+                 }
++
+                 try {
+                     if (fn.length > 1) {
+-                        return fn(span, (err)=>closeSpanWithError(span, err));
++                        return fn(span, (err) => closeSpanWithError(span, err));
+                     }
+                     const result = fn(span);
+                     if ((0, _isthenable.isThenable)(result)) {
+-                        // If there's error make sure it throws
+-                        return result.then((res)=>{
+-                            span.end();
+-                            // Need to pass down the promise result,
+-                            // it could be react stream response with error { error, stream }
+-                            return res;
+-                        }).catch((err)=>{
+-                            closeSpanWithError(span, err);
+-                            throw err;
+-                        }).finally(onCleanup);
++                        return result
++                            .then((res) => {
++                                span.end();
++                                return res;
++                            })
++                            .catch((err) => {
++                                closeSpanWithError(span, err);
++                                throw err;
++                            })
++                            .finally(onCleanup);
+                     } else {
+                         span.end();
+                         onCleanup();
+@@ -189,19 +220,16 @@ class NextTracerImpl {
+                     onCleanup();
+                     throw err;
+                 }
+-            }));
++            })
++        );
+     }
+     wrap(...args) {
+         const tracer = this;
+-        const [name, options, fn] = args.length === 3 ? args : [
+-            args[0],
+-            {},
+-            args[1]
+-        ];
++        const [name, options, fn] = args.length === 3 ? args : [args[0], {}, args[1]];
+         if (!_constants.NextVanillaSpanAllowlist.includes(name) && process.env.NEXT_OTEL_VERBOSE !== '1') {
+             return fn;
+         }
+-        return function() {
++        return function () {
+             let optionsObj = options;
+             if (typeof optionsObj === 'function' && typeof fn === 'function') {
+                 optionsObj = optionsObj.apply(this, arguments);
+@@ -210,15 +238,15 @@ class NextTracerImpl {
+             const cb = arguments[lastArgId];
+             if (typeof cb === 'function') {
+                 const scopeBoundCb = tracer.getContext().bind(context.active(), cb);
+-                return tracer.trace(name, optionsObj, (_span, done)=>{
+-                    arguments[lastArgId] = function(err) {
++                return tracer.trace(name, optionsObj, (_span, done) => {
++                    arguments[lastArgId] = function (err) {
+                         done == null ? void 0 : done(err);
+                         return scopeBoundCb.apply(this, arguments);
+                     };
+                     return fn.apply(this, arguments);
+                 });
+             } else {
+-                return tracer.trace(name, optionsObj, ()=>fn.apply(this, arguments));
++                return tracer.trace(name, optionsObj, () => fn.apply(this, arguments));
+             }
+         };
+     }
+@@ -243,9 +271,10 @@ class NextTracerImpl {
+         }
+     }
+ }
+-const getTracer = (()=>{
++
++const getTracer = (() => {
+     const tracer = new NextTracerImpl();
+-    return ()=>tracer;
++    return () => tracer;
+ })();
+ 
+ //# sourceMappingURL=tracer.js.map
+\ No newline at end of file
