@@ -1,0 +1,42 @@
+diff --git a/node_modules/@cloudflare/unenv-preset/dist/runtime/node/module.mjs b/node_modules/@cloudflare/unenv-preset/dist/runtime/node/module.mjs
+index c54d05e..cda332a 100644
+--- a/node_modules/@cloudflare/unenv-preset/dist/runtime/node/module.mjs
++++ b/node_modules/@cloudflare/unenv-preset/dist/runtime/node/module.mjs
+@@ -25,6 +25,7 @@ import {
+   syncBuiltinESMExports,
+   wrap
+ } from "unenv/node/module";
++
+ export {
+   Module,
+   SourceMap,
+@@ -51,20 +52,24 @@ export {
+   syncBuiltinESMExports,
+   wrap
+ } from "unenv/node/module";
++
++// Fix for Cloudflare deployment: ensure 'file' is never undefined
+ const workerdModule = process.getBuiltinModule("node:module");
+ export const createRequire = (file) => {
+-  return Object.assign(workerdModule.createRequire(file), {
++  const path = file ?? new URL(import.meta.url);
++  return Object.assign(workerdModule.createRequire(path), {
+     resolve: Object.assign(
+-      /* @__PURE__ */ notImplemented("module.require.resolve"),
++      notImplemented("module.require.resolve"),
+       {
+-        paths: /* @__PURE__ */ notImplemented("module.require.resolve.paths")
++        paths: notImplemented("module.require.resolve.paths")
+       }
+     ),
+-    cache: /* @__PURE__ */ Object.create(null),
++    cache: Object.create(null),
+     extensions: _extensions,
+-    main: void 0
++    main: undefined
+   });
+ };
++
+ export default {
+   Module,
+   SourceMap,
