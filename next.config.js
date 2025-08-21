@@ -1,16 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone', // ensures everything is included in output
-  experimental: {
-    serverComponentsExternalPackages: [], // optional, include packages explicitly
-  },
+  output: 'standalone',
+  serverExternalPackages: [],
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.experiments = config.experiments || {};
-      config.experiments.topLevelAwait = true; // if needed for async modules
+      config.experiments.topLevelAwait = true;
     }
 
-    // treat chunks as external for Cloudflare
     config.externals = [
       ...(config.externals || []),
       function ({ request }, callback) {
