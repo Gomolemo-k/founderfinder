@@ -9,7 +9,7 @@ function createSafeUrl(path: string, baseUrl: string | URL): URL | null {
   try {
     return new URL(path, baseUrl);
   } catch (error) {
-    console.error('Invalid URL construction:', error);
+    console.error('Invalid URL construction:', error, { path, baseUrl });
     return null;
   }
 }
@@ -19,12 +19,11 @@ export async function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('session');
   const isProtectedRoute = pathname.startsWith(protectedRoutes);
 
-  // Safe URL creation for redirects
-  const safeRedirectUrl = createSafeUrl('/sign-in', request.url);
+  // Safe URL creation for redirects (use origin instead of full URL)
+  const safeRedirectUrl = createSafeUrl('/sign-in', request.nextUrl.origin);
   
   if (isProtectedRoute && !sessionCookie) {
     if (!safeRedirectUrl) {
-      // Fallback: create a basic response instead of redirect
       return new NextResponse('Authentication required', { status: 401 });
     }
     return NextResponse.redirect(safeRedirectUrl);
@@ -65,5 +64,5 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
-  runtime: 'nodejs'
+  runtime: 'edge',
 };
