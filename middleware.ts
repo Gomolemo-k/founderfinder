@@ -4,13 +4,30 @@ import { signToken, verifyToken } from '@/lib/auth/session';
 
 const protectedRoutes = '/dashboard';
 
+// Helper function to safely create URLs
+function createSafeUrl(path: string, baseUrl: string | URL): URL | null {
+  try {
+    return new URL(path, baseUrl);
+  } catch (error) {
+    console.error('Invalid URL construction:', error);
+    return null;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('session');
   const isProtectedRoute = pathname.startsWith(protectedRoutes);
 
+  // Safe URL creation for redirects
+  const safeRedirectUrl = createSafeUrl('/sign-in', request.url);
+  
   if (isProtectedRoute && !sessionCookie) {
-    return NextResponse.redirect(new URL('/sign-in', request.url));
+    if (!safeRedirectUrl) {
+      // Fallback: create a basic response instead of redirect
+      return new NextResponse('Authentication required', { status: 401 });
+    }
+    return NextResponse.redirect(safeRedirectUrl);
   }
 
   let res = NextResponse.next();
@@ -35,7 +52,10 @@ export async function middleware(request: NextRequest) {
       console.error('Error updating session:', error);
       res.cookies.delete('session');
       if (isProtectedRoute) {
-        return NextResponse.redirect(new URL('/sign-in', request.url));
+        if (!safeRedirectUrl) {
+          return new NextResponse('Authentication required', { status: 401 });
+        }
+        return NextResponse.redirect(safeRedirectUrl);
       }
     }
   }
